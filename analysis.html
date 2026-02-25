@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Analysis — CricAnalytics Pro</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .trend-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .trend-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            width: 80px;
+            flex-shrink: 0;
+        }
+
+        .trend-val {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            width: 40px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .type-tab-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .type-tab-btn {
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            border: 1px solid var(--glass-border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .type-tab-btn.active,
+        .type-tab-btn:hover {
+            background: rgba(245, 166, 35, 0.15);
+            border-color: rgba(245, 166, 35, 0.5);
+            color: var(--accent-gold);
+        }
+
+        .compare-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media(max-width:600px) {
+            .compare-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .type-stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            text-align: center;
+        }
+
+        .type-stat-card h4 {
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+        }
+
+        .type-stat-card .big {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent-gold);
+        }
+
+        .type-stat-card .sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <div class="app-wrapper">
+        <nav class="sidebar" id="sidebar">
+            <button class="sidebar-close" id="sidebar-close">✕</button>
+            <div class="sidebar-logo"><span class="cricket-emoji">🏏</span>
+                <div class="logo-text">CricAnalytics</div>
+                <div class="logo-sub">Pro Edition</div>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-section-title">Main</div>
+                <a class="nav-item" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+                <a class="nav-item" href="add-match.html"><span class="nav-icon">➕</span> Add Match</a>
+                <a class="nav-item" href="match-history.html"><span class="nav-icon">📋</span> Match History</a>
+                <div class="nav-section-title">Analysis</div>
+                <a class="nav-item" href="analysis.html"><span class="nav-icon">📊</span> Performance Analysis</a>
+                <a class="nav-item" href="players.html"><span class="nav-icon">👥</span> All Players</a>
+                <div class="nav-section-title">Account</div>
+                <a class="nav-item" href="#" onclick="handleLogout()"><span class="nav-icon">🚪</span> Logout</a>
+            </div>
+            <div class="sidebar-footer"><a class="admin-btn" href="admin.html">🔒 Admin Panel</a></div>
+        </nav>
+
+        <div class="main-content">
+            <div class="topbar">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <button class="hamburger" id="hamburger">☰</button>
+                    <h1>📊 Performance Analysis</h1>
+                </div>
+                <div class="topbar-right">
+                    <button class="btn btn-ghost btn-sm" id="btn-export">📥 Export</button>
+                </div>
+            </div>
+
+            <div class="page-content">
+
+                <!-- Insights -->
+                <div class="glass-card mb-4">
+                    <div class="card-header">
+                        <h2>🧠 Smart Insights</h2><span class="card-icon">🤖</span>
+                    </div>
+                    <div class="card-body" id="insights-container"></div>
+                </div>
+
+                <!-- Last 5 Trend -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h2>📈 Runs Trend (Last 5)</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="background:none;border:none;padding:0">
+                                <canvas id="trend-runs"></canvas>
+                            </div>
+                            <div id="trend-runs-bars" style="margin-top:16px"></div>
+                        </div>
+                    </div>
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h2>🎯 Wickets Trend (Last 5)</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="background:none;border:none;padding:0">
+                                <canvas id="trend-wkts"></canvas>
+                            </div>
+                            <div id="trend-wkts-bars" style="margin-top:16px"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparing career avg vs last 5 -->
+                <div class="glass-card mb-4">
+                    <div class="card-header">
+                        <h2>⚖️ Last 5 vs Career</h2><span class="card-icon">📊</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="compare-section"></div>
+                    </div>
+                </div>
+
+                <!-- By match type -->
+                <div class="glass-card mb-4">
+                    <div class="card-header">
+                        <h2>🏷️ Performance by Match Type</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="compare-row" id="type-compare"></div>
+                    </div>
+                </div>
+
+                <!-- Full batting performance chart -->
+                <div class="glass-card mb-4">
+                    <div class="card-header">
+                        <h2>📊 Runs Per Match (All)</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="background:none;border:none;padding:0">
+                            <canvas id="chart-all-runs"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+    <script src="app.js"></script>
+    <script src="charts.js"></script>
+    <script>
+        requireLogin();
+        const player = getCurrentPlayer();
+        const stats = calcStats(player.mobile);
+        const lastFive = getLastNMatches(player.mobile, 5);
+        const allMatches = getMatchesByPlayer(player.mobile);
+
+        document.getElementById('btn-export').addEventListener('click', () => exportToText(player.mobile));
+
+        // ===== INSIGHTS =====
+        const insights = getInsights(stats);
+        document.getElementById('insights-container').innerHTML = insights.map(ins => `
+  <div class="insight-card ${ins.type}">
+    <div class="insight-emoji">${ins.emoji}</div>
+    <div class="insight-text">
+      <h4>${ins.title}</h4>
+      <p>${ins.desc}</p>
+    </div>
+  </div>
+`).join('');
+
+        // ===== TREND CHARTS =====
+        const trendLabels = lastFive.map((m, i) => `M${i + 1}`);
+        const trendRuns = lastFive.map(m => parseInt(m.runs) || 0);
+        const trendWkts = lastFive.map(m => parseInt(m.wickets) || 0);
+        const trendDates = lastFive.map(m => fmtDate(m.matchDate));
+
+        setTimeout(() => {
+            drawLineChart('trend-runs', trendLabels, trendRuns, '#c8860a');
+            drawBarChart('trend-wkts', trendLabels, trendWkts, '#1a9b75');
+
+            // Run bars detail
+            const maxR = Math.max(...trendRuns, 1);
+            document.getElementById('trend-runs-bars').innerHTML = lastFive.map((m, i) => `
+    <div class="trend-bar-wrap">
+      <span class="trend-label">${trendDates[i]}</span>
+      <div class="progress-bar-wrap" style="flex:1">
+        <div class="progress-bar" style="width:${(trendRuns[i] / maxR * 100).toFixed(1)}%"></div>
+      </div>
+      <span class="trend-val">${trendRuns[i]}</span>
+    </div>
+  `).join('') || '<p style="color:var(--text-muted);font-size:0.85rem">No data yet</p>';
+
+            const maxW = Math.max(...trendWkts, 1);
+            document.getElementById('trend-wkts-bars').innerHTML = lastFive.map((m, i) => `
+    <div class="trend-bar-wrap">
+      <span class="trend-label">${trendDates[i]}</span>
+      <div class="progress-bar-wrap" style="flex:1">
+        <div class="progress-bar green" style="width:${(trendWkts[i] / maxW * 100).toFixed(1)}%"></div>
+      </div>
+      <span class="trend-val">${trendWkts[i]}</span>
+    </div>
+  `).join('') || '<p style="color:var(--text-muted);font-size:0.85rem">No data yet</p>';
+
+            // All runs chart
+            const allLabels = allMatches.slice().reverse().map((m, i) => `M${i + 1}`);
+            const allRunsArr = allMatches.slice().reverse().map(m => parseInt(m.runs) || 0);
+            drawBarChart('chart-all-runs', allLabels, allRunsArr, '#c8860a');
+        }, 50);
+
+        // ===== LAST 5 vs CAREER =====
+        const l5Runs = trendRuns.reduce((a, b) => a + b, 0);
+        const l5Avg = trendRuns.length ? (l5Runs / trendRuns.length).toFixed(1) : 0;
+        const l5Wkts = trendWkts.reduce((a, b) => a + b, 0);
+        const careerRunsPerMatch = stats.bat.total ? (stats.bat.runs / stats.bat.total).toFixed(1) : 0;
+        const careerWktsPerMatch = stats.bat.total ? (stats.bowl.wickets / stats.bat.total).toFixed(1) : 0;
+
+        const formVsCareerRuns = parseFloat(l5Avg) >= parseFloat(careerRunsPerMatch);
+        document.getElementById('compare-section').innerHTML = `
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+    <div class="type-stat-card">
+      <h4>Career Avg. Runs/Match</h4>
+      <div class="big">${careerRunsPerMatch}</div>
+      <div class="sub">All ${stats.bat.total} matches</div>
+    </div>
+    <div class="type-stat-card">
+      <h4>Last 5 Avg. Runs/Match</h4>
+      <div class="big" style="color:${formVsCareerRuns ? 'var(--accent-green)' : 'var(--accent-red)'}">${l5Avg}</div>
+      <div class="sub">${formVsCareerRuns ? '🔥 In form!' : '📉 Below career avg'}</div>
+    </div>
+    <div class="type-stat-card">
+      <h4>Last 5 Wickets</h4>
+      <div class="big" style="color:var(--accent-green)">${l5Wkts}</div>
+      <div class="sub">Career: ${stats.bowl.wickets} total</div>
+    </div>
+  </div>
+`;
+
+        // ===== BY TYPE =====
+        const TYPES = ['Leather', 'Tennis', 'Box'];
+        document.getElementById('type-compare').innerHTML = TYPES.map(t => {
+            const d = stats.byType[t];
+            return `<div class="type-stat-card">
+    <h4>${t === 'Leather' ? '🏏' : t === 'Tennis' ? '🎾' : '📦'} ${t} Ball</h4>
+    <div class="big">${d.runs}</div>
+    <div class="sub">${d.matches} matches · ${d.wickets} wickets</div>
+  </div>`;
+        }).join('');
+
+        function handleLogout() { clearCurrentPlayer(); window.location.href = 'index.html'; }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Match History — CricAnalytics Pro</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <div class="app-wrapper">
+        <nav class="sidebar" id="sidebar">
+            <button class="sidebar-close" id="sidebar-close">✕</button>
+            <div class="sidebar-logo"><span class="cricket-emoji">🏏</span>
+                <div class="logo-text">CricAnalytics</div>
+                <div class="logo-sub">Pro Edition</div>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-section-title">Main</div>
+                <a class="nav-item" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+                <a class="nav-item" href="add-match.html"><span class="nav-icon">➕</span> Add Match</a>
+                <a class="nav-item" href="match-history.html"><span class="nav-icon">📋</span> Match History</a>
+                <div class="nav-section-title">Analysis</div>
+                <a class="nav-item" href="analysis.html"><span class="nav-icon">📊</span> Performance Analysis</a>
+                <a class="nav-item" href="players.html"><span class="nav-icon">👥</span> All Players</a>
+                <div class="nav-section-title">Account</div>
+                <a class="nav-item" href="#" onclick="handleLogout()"><span class="nav-icon">🚪</span> Logout</a>
+            </div>
+            <div class="sidebar-footer"><a class="admin-btn" href="admin.html">🔒 Admin Panel</a></div>
+        </nav>
+
+        <div class="main-content">
+            <div class="topbar">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <button class="hamburger" id="hamburger">☰</button>
+                    <h1>📋 Match History</h1>
+                </div>
+                <div class="topbar-right">
+                    <a href="add-match.html" class="btn btn-gold btn-sm">➕ Add Match</a>
+                </div>
+            </div>
+
+            <div class="page-content">
+                <!-- Filters -->
+                <div class="filter-bar">
+                    <select id="filter-type" class="form-control" onchange="applyFilters()">
+                        <option value="">All Types</option>
+                        <option value="Leather">🏏 Leather</option>
+                        <option value="Tennis">🎾 Tennis</option>
+                        <option value="Box">📦 Box</option>
+                    </select>
+                    <input type="month" id="filter-month" class="form-control" onchange="applyFilters()"
+                        style="min-width:160px" />
+                    <input type="text" id="filter-tournament" class="form-control" placeholder="Search tournament..."
+                        oninput="applyFilters()" style="min-width:180px" />
+                    <button class="btn btn-ghost btn-sm" onclick="clearFilters()">✕ Clear</button>
+                    <span id="match-count" style="font-size:0.8rem;color:var(--text-muted);margin-left:auto"></span>
+                </div>
+
+                <!-- Match table -->
+                <div class="glass-card">
+                    <div class="card-body" style="padding:0">
+                        <div class="table-container">
+                            <table id="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Date</th>
+                                        <th>Tournament</th>
+                                        <th>Type</th>
+                                        <th>Runs (Balls)</th>
+                                        <th>SR</th>
+                                        <th>4s</th>
+                                        <th>6s</th>
+                                        <th>Dismissal</th>
+                                        <th>Overs</th>
+                                        <th>Wkts/Runs</th>
+                                        <th>Eco</th>
+                                        <th>Catches</th>
+                                        <th>RO</th>
+                                        <th>MOTM</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div id="empty-history" class="empty-state" style="display:none">
+                            <div class="empty-icon">📋</div>
+                            <h3>No matches found</h3>
+                            <p>Try changing your filter or add your first match</p>
+                            <a href="add-match.html" class="btn btn-gold">➕ Add Match</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal">
+            <h2>🗑️ Delete Match?</h2>
+            <p style="color:var(--text-muted);font-size:0.9rem">This action cannot be undone. The match will be
+                permanently removed from your records.</p>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn btn-red" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+    <script src="app.js"></script>
+    <script>
+        requireLogin();
+        const player = getCurrentPlayer();
+        let allMatches = getMatchesByPlayer(player.mobile);
+        let deleteTargetId = null;
+
+        function render(matches) {
+            const tbody = document.getElementById('history-tbody');
+            const empty = document.getElementById('empty-history');
+            const table = document.getElementById('history-table');
+            document.getElementById('match-count').textContent = `${matches.length} match${matches.length !== 1 ? 'es' : ''}`;
+
+            if (!matches.length) {
+                table.style.display = 'none';
+                empty.style.display = 'block';
+                return;
+            }
+            table.style.display = '';
+            empty.style.display = 'none';
+
+            tbody.innerHTML = matches.map((m, i) => {
+                const sr = m.balls > 0 ? ((m.runs / m.balls) * 100).toFixed(1) : '-';
+                const eco = m.overs > 0 ? (m.bRuns / m.overs).toFixed(2) : '-';
+                return `<tr>
+      <td class="text-muted">${i + 1}</td>
+      <td>${fmtDate(m.matchDate)}</td>
+      <td class="highlight">${m.tournament || '-'}</td>
+      <td><span class="badge badge-blue">${m.matchType}</span></td>
+      <td class="gold">${m.runs || 0}(${m.balls || 0})</td>
+      <td>${sr}</td>
+      <td>${m.fours || 0}</td>
+      <td>${m.sixes || 0}</td>
+      <td style="font-size:0.8rem">${m.dismissal || '-'}</td>
+      <td>${m.overs || 0}</td>
+      <td class="green">${m.wickets || 0}/${m.bRuns || 0}</td>
+      <td>${eco}</td>
+      <td>${m.catches || 0}</td>
+      <td>${m.runouts || 0}</td>
+      <td>${m.motm ? '🏆' : '-'}</td>
+    </tr>`;
+            }).join('');
+        }
+
+        function applyFilters() {
+            const type = document.getElementById('filter-type').value;
+            const month = document.getElementById('filter-month').value;
+            const tourney = document.getElementById('filter-tournament').value.toLowerCase().trim();
+            let filtered = allMatches;
+            if (type) filtered = filtered.filter(m => m.matchType === type);
+            if (month) filtered = filtered.filter(m => m.matchDate && m.matchDate.startsWith(month));
+            if (tourney) filtered = filtered.filter(m => (m.tournament || '').toLowerCase().includes(tourney));
+            render(filtered);
+        }
+
+        function clearFilters() {
+            document.getElementById('filter-type').value = '';
+            document.getElementById('filter-month').value = '';
+            document.getElementById('filter-tournament').value = '';
+            render(allMatches);
+        }
+
+        function openDeleteModal(id) {
+            deleteTargetId = id;
+            document.getElementById('delete-modal').classList.add('active');
+        }
+        function closeDeleteModal() {
+            deleteTargetId = null;
+            document.getElementById('delete-modal').classList.remove('active');
+        }
+        function confirmDelete() {
+            if (!deleteTargetId) return;
+            deleteMatch(deleteTargetId);
+            allMatches = getMatchesByPlayer(player.mobile);
+            applyFilters();
+            closeDeleteModal();
+            showToast('Match deleted');
+        }
+
+        function handleLogout() { clearCurrentPlayer(); window.location.href = 'index.html'; }
+
+        render(allMatches);
+    </script>
+</body>
+
+</html>

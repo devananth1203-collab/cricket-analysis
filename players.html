@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Players — CricAnalytics Pro</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <div class="app-wrapper">
+        <nav class="sidebar" id="sidebar">
+            <button class="sidebar-close" id="sidebar-close">✕</button>
+            <div class="sidebar-logo"><span class="cricket-emoji">🏏</span>
+                <div class="logo-text">CricAnalytics</div>
+                <div class="logo-sub">Pro Edition</div>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-section-title">Main</div>
+                <a class="nav-item" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+                <a class="nav-item" href="add-match.html"><span class="nav-icon">➕</span> Add Match</a>
+                <a class="nav-item" href="match-history.html"><span class="nav-icon">📋</span> Match History</a>
+                <div class="nav-section-title">Analysis</div>
+                <a class="nav-item" href="analysis.html"><span class="nav-icon">📊</span> Performance Analysis</a>
+                <a class="nav-item" href="players.html"><span class="nav-icon">👥</span> All Players</a>
+                <div class="nav-section-title">Account</div>
+                <a class="nav-item" href="#" onclick="handleLogout()"><span class="nav-icon">🚪</span> Logout</a>
+            </div>
+            <div class="sidebar-footer"><a class="admin-btn" href="admin.html">🔒 Admin Panel</a></div>
+        </nav>
+
+        <div class="main-content">
+            <div class="topbar">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <button class="hamburger" id="hamburger">☰</button>
+                    <h1>👥 All Players</h1>
+                </div>
+                <div class="topbar-right">
+                    <a href="index.html" class="btn btn-gold btn-sm">➕ Register Player</a>
+                </div>
+            </div>
+
+            <div class="page-content">
+                <!-- Filters -->
+                <div class="filter-bar mb-4">
+                    <input type="text" id="search-player" class="form-control" placeholder="🔍 Search player..."
+                        oninput="renderPlayers()" style="min-width:200px" />
+                    <select id="filter-role" class="form-control" onchange="renderPlayers()">
+                        <option value="">All Roles</option>
+                        <option value="Batsman">Batsman</option>
+                        <option value="Bowler">Bowler</option>
+                        <option value="All-Rounder">All-Rounder</option>
+                        <option value="Wicketkeeper">Wicketkeeper</option>
+                    </select>
+                    <select id="filter-type" class="form-control" onchange="renderPlayers()">
+                        <option value="">All Types</option>
+                        <option value="Leather">Leather</option>
+                        <option value="Tennis">Tennis</option>
+                        <option value="Box">Box</option>
+                    </select>
+                    <span id="player-count" style="font-size:0.8rem;color:var(--text-muted);margin-left:auto"></span>
+                </div>
+
+                <!-- Player leaderboard table -->
+                <div class="glass-card mb-4">
+                    <div class="card-header">
+                        <h2>🏆 Leaderboard</h2>
+                    </div>
+                    <div class="card-body" style="padding:0">
+                        <div class="table-container">
+                            <table id="leaderboard-table">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Player</th>
+                                        <th>Role</th>
+                                        <th>Matches</th>
+                                        <th>Runs</th>
+                                        <th>Avg</th>
+                                        <th>SR</th>
+                                        <th>Wickets</th>
+                                        <th>Economy</th>
+                                        <th>MOTM</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leaderboard-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div id="empty-players" class="empty-state" style="display:none">
+                            <div class="empty-icon">👥</div>
+                            <h3>No players registered</h3>
+                            <p>Register the first player to get started</p>
+                            <a href="index.html" class="btn btn-gold">➕ Register Player</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Run Scorers & Wicket Takers -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h2>🏏 Top Scorers</h2>
+                        </div>
+                        <div class="card-body" style="padding:0">
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Player</th>
+                                            <th>Runs</th>
+                                            <th>Avg</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="top-scorers"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h2>🎯 Top Wicket Takers</h2>
+                        </div>
+                        <div class="card-body" style="padding:0">
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Player</th>
+                                            <th>Wkts</th>
+                                            <th>Eco</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="top-bowlers"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+    <script src="app.js"></script>
+    <script>
+        // Current player might not be logged in here — allow browsing
+        const currentPlayer = getCurrentPlayer();
+
+        function viewPlayer(mobile) {
+            setCurrentPlayer(mobile);
+            window.location.href = 'dashboard.html';
+        }
+
+        function renderPlayers() {
+            const search = document.getElementById('search-player').value.toLowerCase();
+            const role = document.getElementById('filter-role').value;
+            const type = document.getElementById('filter-type').value;
+
+            let players = getPlayers();
+            if (search) players = players.filter(p => p.name.toLowerCase().includes(search) || p.mobile.includes(search));
+            if (role) players = players.filter(p => p.role === role);
+            if (type) players = players.filter(p => p.matchType === type);
+
+            document.getElementById('player-count').textContent = `${players.length} player${players.length !== 1 ? 's' : ''}`;
+
+            const tbody = document.getElementById('leaderboard-tbody');
+            const empty = document.getElementById('empty-players');
+            const table = document.getElementById('leaderboard-table');
+
+            if (!players.length) {
+                table.style.display = 'none';
+                empty.style.display = 'block';
+                return;
+            }
+            table.style.display = '';
+            empty.style.display = 'none';
+
+            // Sort by runs desc
+            const withStats = players.map(p => ({ p, s: calcStats(p.mobile) }));
+            withStats.sort((a, b) => b.s.bat.runs - a.s.bat.runs);
+
+            tbody.innerHTML = withStats.map(({ p, s }, i) => {
+                const isCurrent = currentPlayer && currentPlayer.mobile === p.mobile;
+                return `<tr style="${isCurrent ? 'background:rgba(245,166,35,0.07)' : ''}">
+      <td class="text-muted">${i + 1}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="player-mini-avatar" style="width:34px;height:34px;font-size:0.9rem">${initials(p.name)}</div>
+          <div>
+            <div class="highlight">${p.name}${isCurrent ? ' <span style="color:var(--accent-gold);font-size:0.7rem">◀ You</span>' : ''}</div>
+            <div style="font-size:0.72rem;color:var(--text-muted)">${p.mobile}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="badge badge-green">${p.role}</span></td>
+      <td>${s.bat.total}</td>
+      <td class="gold">${s.bat.runs}</td>
+      <td>${s.avg}</td>
+      <td>${s.sr}</td>
+      <td class="green">${s.bowl.wickets}</td>
+      <td>${s.eco}</td>
+      <td>${s.bat.motm > 0 ? '🏆 ' + s.bat.motm : '-'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="viewPlayer('${p.mobile}')">View</button></td>
+    </tr>`;
+            }).join('');
+
+            // Top scorers (top 5)
+            const top5Bat = [...withStats].sort((a, b) => b.s.bat.runs - a.s.bat.runs).slice(0, 5);
+            document.getElementById('top-scorers').innerHTML = top5Bat.map(({ p, s }, i) => `
+    <tr>
+      <td class="text-muted">${i + 1}</td>
+      <td class="highlight">${p.name}</td>
+      <td class="gold">${s.bat.runs}</td>
+      <td>${s.avg}</td>
+    </tr>`).join('') || '<tr><td colspan="4" class="text-center text-muted">No data</td></tr>';
+
+            // Top bowlers (top 5)
+            const top5Bowl = [...withStats].sort((a, b) => b.s.bowl.wickets - a.s.bowl.wickets).slice(0, 5);
+            document.getElementById('top-bowlers').innerHTML = top5Bowl.map(({ p, s }, i) => `
+    <tr>
+      <td class="text-muted">${i + 1}</td>
+      <td class="highlight">${p.name}</td>
+      <td class="green">${s.bowl.wickets}</td>
+      <td>${s.eco}</td>
+    </tr>`).join('') || '<tr><td colspan="4" class="text-center text-muted">No data</td></tr>';
+        }
+
+        function handleLogout() { clearCurrentPlayer(); window.location.href = 'index.html'; }
+
+        renderPlayers();
+    </script>
+</body>
+
+</html>

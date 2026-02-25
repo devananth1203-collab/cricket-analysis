@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Panel — CricAnalytics Pro</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .admin-login-wrap {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .admin-login-card {
+            background: rgba(15, 22, 40, 0.98);
+            border: 1px solid rgba(165, 94, 234, 0.35);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+        }
+
+        .admin-login-card h2 {
+            font-size: 1.3rem;
+            margin-bottom: 6px;
+        }
+
+        .admin-login-card p {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+        }
+
+        #admin-panel {
+            display: none;
+        }
+
+        .edit-field-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .edit-field-row .form-control {
+            flex: 1;
+        }
+
+        .match-edit-row td {
+            vertical-align: middle;
+        }
+
+        .match-edit-row input {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            padding: 6px 10px;
+            font-size: 0.82rem;
+            width: 70px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- ADMIN LOGIN WALL -->
+    <div class="admin-login-wrap" id="admin-login-wrap">
+        <div class="admin-login-card">
+            <div style="font-size:2.5rem;margin-bottom:12px">🔒</div>
+            <h2 style="color:var(--accent-purple)">Admin Panel</h2>
+            <p>Enter admin password to continue</p>
+            <div class="form-group">
+                <input type="password" id="admin-pw-input" class="form-control" placeholder="Admin password"
+                    style="text-align:center" />
+            </div>
+            <button class="btn" style="width:100%;justify-content:center;background:var(--gradient-purple);color:#fff"
+                onclick="doAdminLogin()">
+                🔓 Unlock Panel
+            </button>
+            <p style="margin-top:16px;font-size:0.75rem;color:var(--text-muted)">Default: admin@cricket123</p>
+            <a href="index.html"
+                style="display:block;margin-top:12px;font-size:0.8rem;color:var(--text-muted);text-decoration:none">←
+                Back to Login</a>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL (shown after login) -->
+    <div id="admin-panel">
+        <div class="app-wrapper">
+            <nav class="sidebar" id="sidebar">
+                <button class="sidebar-close" id="sidebar-close">✕</button>
+                <div class="sidebar-logo"><span class="cricket-emoji">🔒</span>
+                    <div class="logo-text">Admin Panel</div>
+                    <div class="logo-sub">CricAnalytics Pro</div>
+                </div>
+                <div class="sidebar-nav">
+                    <div class="nav-section-title">Admin</div>
+                    <a class="nav-item" href="#" onclick="showSection('players')"><span class="nav-icon">👥</span>
+                        Manage Players</a>
+                    <a class="nav-item" href="#" onclick="showSection('matches')"><span class="nav-icon">📋</span>
+                        Manage Matches</a>
+                    <a class="nav-item" href="#" onclick="showSection('settings')"><span class="nav-icon">⚙️</span>
+                        Settings</a>
+                    <div class="nav-section-title">App</div>
+                    <a class="nav-item" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+                    <a class="nav-item" href="players.html"><span class="nav-icon">👥</span> All Players</a>
+                </div>
+                <div class="sidebar-footer">
+                    <button class="admin-btn" onclick="adminLogout()">🚪 Logout Admin</button>
+                </div>
+            </nav>
+
+            <div class="main-content">
+                <div class="topbar">
+                    <div style="display:flex;align-items:center;gap:12px">
+                        <button class="hamburger" id="hamburger">☰</button>
+                        <h1>🔒 Admin Panel</h1>
+                    </div>
+                    <div class="topbar-right">
+                        <span style="font-size:0.8rem;color:var(--accent-purple);font-weight:700">Admin Mode</span>
+                    </div>
+                </div>
+
+                <div class="page-content">
+
+                    <!-- PLAYERS SECTION -->
+                    <div id="section-players">
+                        <div class="glass-card">
+                            <div class="card-header">
+                                <h2>👥 Manage Players</h2>
+                            </div>
+                            <div class="card-body" style="padding:0">
+                                <div class="table-container">
+                                    <table id="admin-players-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Player</th>
+                                                <th>Mobile</th>
+                                                <th>Role</th>
+                                                <th>Type</th>
+                                                <th>Matches</th>
+                                                <th>Registered</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-players-tbody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MATCHES SECTION -->
+                    <div id="section-matches" style="display:none">
+                        <div class="filter-bar mb-4">
+                            <select id="admin-player-select" class="form-control" onchange="loadAdminMatches()">
+                                <option value="">— Select Player —</option>
+                            </select>
+                        </div>
+                        <div class="glass-card">
+                            <div class="card-header">
+                                <h2>📋 Manage Matches</h2>
+                            </div>
+                            <div class="card-body" style="padding:0">
+                                <div class="table-container">
+                                    <table id="admin-matches-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Tournament</th>
+                                                <th>Runs</th>
+                                                <th>Balls</th>
+                                                <th>Wickets</th>
+                                                <th>Runs(B)</th>
+                                                <th>MOTM</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-matches-tbody"></tbody>
+                                    </table>
+                                    <div id="admin-matches-empty" class="empty-state" style="display:none">
+                                        <div class="empty-icon">📋</div>
+                                        <h3>Select a player to view matches</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SETTINGS SECTION -->
+                    <div id="section-settings" style="display:none">
+                        <div class="glass-card" style="max-width:480px">
+                            <div class="card-header">
+                                <h2>⚙️ Admin Settings</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label>Change Admin Password</label>
+                                    <input type="password" id="new-pw" class="form-control"
+                                        placeholder="New password" />
+                                </div>
+                                <div class="form-group">
+                                    <input type="password" id="confirm-pw" class="form-control"
+                                        placeholder="Confirm new password" />
+                                </div>
+                                <button class="btn btn-gold" onclick="changePassword()">💾 Save Password</button>
+
+                                <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--glass-border)">
+                                    <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">Danger Zone
+                                    </p>
+                                    <button class="btn btn-red btn-sm" onclick="confirmClearAll()">🗑️ Clear All
+                                        Data</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Player Modal -->
+    <div class="modal-overlay" id="edit-player-modal">
+        <div class="modal">
+            <h2>✏️ Edit Player</h2>
+            <input type="hidden" id="edit-mobile" />
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="edit-name" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label>Role</label>
+                <select id="edit-role" class="form-control">
+                    <option value="Batsman">Batsman</option>
+                    <option value="Bowler">Bowler</option>
+                    <option value="All-Rounder">All-Rounder</option>
+                    <option value="Wicketkeeper">Wicketkeeper</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Match Type</label>
+                <select id="edit-type" class="form-control">
+                    <option value="Leather">Leather</option>
+                    <option value="Tennis">Tennis</option>
+                    <option value="Box">Box</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('edit-player-modal')">Cancel</button>
+                <button class="btn btn-gold" onclick="savePlayerEdit()">💾 Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Player Modal -->
+    <div class="modal-overlay" id="del-player-modal">
+        <div class="modal">
+            <h2>🗑️ Delete Player?</h2>
+            <p style="color:var(--text-muted);font-size:0.9rem">This will permanently delete the player and all their
+                match history.</p>
+            <input type="hidden" id="del-player-mobile" />
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('del-player-modal')">Cancel</button>
+                <button class="btn btn-red" onclick="confirmDeletePlayer()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Match Modal -->
+    <div class="modal-overlay" id="edit-match-modal">
+        <div class="modal" style="max-width:520px">
+            <h2>✏️ Edit Match</h2>
+            <input type="hidden" id="edit-match-id" />
+            <div class="form-row">
+                <div class="form-group"><label>Match Date</label><input type="date" id="em-date" class="form-control" />
+                </div>
+                <div class="form-group"><label>Tournament</label><input type="text" id="em-tournament"
+                        class="form-control" /></div>
+            </div>
+            <div class="form-row cols-3">
+                <div class="form-group"><label>Runs</label><input type="number" id="em-runs" class="form-control" />
+                </div>
+                <div class="form-group"><label>Balls</label><input type="number" id="em-balls" class="form-control" />
+                </div>
+                <div class="form-group"><label>Wickets</label><input type="number" id="em-wickets"
+                        class="form-control" /></div>
+            </div>
+            <div class="form-row cols-3">
+                <div class="form-group"><label>Overs</label><input type="number" id="em-overs" class="form-control"
+                        step="0.1" /></div>
+                <div class="form-group"><label>Runs Conc.</label><input type="number" id="em-bruns"
+                        class="form-control" /></div>
+                <div class="form-group"><label>Catches</label><input type="number" id="em-catches"
+                        class="form-control" /></div>
+            </div>
+            <div class="form-check" onclick="toggleEditMOTM()">
+                <input type="checkbox" id="em-motm" />
+                <label for="em-motm">🏆 Man of the Match</label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('edit-match-modal')">Cancel</button>
+                <button class="btn btn-gold" onclick="saveMatchEdit()">💾 Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+    <script src="app.js"></script>
+    <script>
+        let adminLoggedIn = false;
+
+        function doAdminLogin() {
+            const pw = document.getElementById('admin-pw-input').value;
+            if (checkAdmin(pw)) {
+                adminLoggedIn = true;
+                document.getElementById('admin-login-wrap').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                showSection('players');
+            } else {
+                showToast('Wrong password!', 'error');
+            }
+        }
+        // Allow pressing enter
+        document.getElementById('admin-pw-input').addEventListener('keypress', e => { if (e.key === 'Enter') doAdminLogin(); });
+
+        function adminLogout() { window.location.href = 'index.html'; }
+
+        function showSection(s) {
+            ['players', 'matches', 'settings'].forEach(sec => {
+                document.getElementById(`section-${sec}`).style.display = sec === s ? 'block' : 'none';
+            });
+            if (s === 'players') loadAdminPlayers();
+            if (s === 'matches') loadPlayerSelect();
+        }
+
+        function loadAdminPlayers() {
+            const players = getPlayers();
+            const tbody = document.getElementById('admin-players-tbody');
+            tbody.innerHTML = players.map(p => {
+                const s = calcStats(p.mobile);
+                const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN') : '-';
+                return `<tr>
+      <td><div style="display:flex;align-items:center;gap:10px">
+        <div class="player-mini-avatar" style="width:32px;height:32px;font-size:0.85rem">${initials(p.name)}</div>
+        <span class="highlight">${p.name}</span>
+      </div></td>
+      <td class="text-muted">${p.mobile}</td>
+      <td><span class="badge badge-green">${p.role}</span></td>
+      <td><span class="badge badge-blue">${p.matchType}</span></td>
+      <td>${s.bat.total}</td>
+      <td class="text-muted" style="font-size:0.8rem">${date}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="openEditPlayer('${p.mobile}')">✏️</button>
+          <button class="btn btn-red btn-sm" onclick="openDelPlayer('${p.mobile}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+            }).join('') || '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">No players registered</td></tr>';
+        }
+
+        function openEditPlayer(mobile) {
+            const p = getPlayerByMobile(mobile);
+            document.getElementById('edit-mobile').value = mobile;
+            document.getElementById('edit-name').value = p.name;
+            document.getElementById('edit-role').value = p.role;
+            document.getElementById('edit-type').value = p.matchType;
+            document.getElementById('edit-player-modal').classList.add('active');
+        }
+        function savePlayerEdit() {
+            const mobile = document.getElementById('edit-mobile').value;
+            const p = getPlayerByMobile(mobile);
+            p.name = document.getElementById('edit-name').value.trim() || p.name;
+            p.role = document.getElementById('edit-role').value;
+            p.matchType = document.getElementById('edit-type').value;
+            savePlayer(p);
+            closeModal('edit-player-modal');
+            loadAdminPlayers();
+            showToast('Player updated!');
+        }
+
+        function openDelPlayer(mobile) {
+            document.getElementById('del-player-mobile').value = mobile;
+            document.getElementById('del-player-modal').classList.add('active');
+        }
+        function confirmDeletePlayer() {
+            const mobile = document.getElementById('del-player-mobile').value;
+            deletePlayer(mobile);
+            closeModal('del-player-modal');
+            loadAdminPlayers();
+            showToast('Player deleted');
+        }
+
+        function loadPlayerSelect() {
+            const players = getPlayers();
+            const sel = document.getElementById('admin-player-select');
+            sel.innerHTML = '<option value="">— Select Player —</option>' +
+                players.map(p => `<option value="${p.mobile}">${p.name}</option>`).join('');
+        }
+
+        function loadAdminMatches() {
+            const mobile = document.getElementById('admin-player-select').value;
+            const tbody = document.getElementById('admin-matches-tbody');
+            const empty = document.getElementById('admin-matches-empty');
+            const table = document.getElementById('admin-matches-table');
+            if (!mobile) {
+                table.style.display = 'none'; empty.style.display = 'block'; return;
+            }
+            const matches = getMatchesByPlayer(mobile);
+            table.style.display = ''; empty.style.display = 'none';
+            tbody.innerHTML = matches.map(m => `<tr>
+    <td>${fmtDate(m.matchDate)}</td>
+    <td class="highlight">${m.tournament || '-'}</td>
+    <td class="gold">${m.runs || 0}</td>
+    <td>${m.balls || 0}</td>
+    <td class="green">${m.wickets || 0}</td>
+    <td>${m.bRuns || 0}</td>
+    <td>${m.motm ? '🏆' : '-'}</td>
+    <td>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="openEditMatch('${m.id}')">✏️</button>
+        <button class="btn btn-red btn-sm" onclick="doDeleteMatch('${m.id}')">🗑️</button>
+      </div>
+    </td>
+  </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted)">No matches</td></tr>';
+        }
+
+        function openEditMatch(id) {
+            const m = getMatches().find(x => x.id === id);
+            if (!m) return;
+            document.getElementById('edit-match-id').value = id;
+            document.getElementById('em-date').value = m.matchDate;
+            document.getElementById('em-tournament').value = m.tournament || '';
+            document.getElementById('em-runs').value = m.runs || 0;
+            document.getElementById('em-balls').value = m.balls || 0;
+            document.getElementById('em-wickets').value = m.wickets || 0;
+            document.getElementById('em-overs').value = m.overs || 0;
+            document.getElementById('em-bruns').value = m.bRuns || 0;
+            document.getElementById('em-catches').value = m.catches || 0;
+            document.getElementById('em-motm').checked = !!m.motm;
+            document.getElementById('edit-match-modal').classList.add('active');
+        }
+        function toggleEditMOTM() {
+            const cb = document.getElementById('em-motm');
+            cb.checked = !cb.checked;
+        }
+        function saveMatchEdit() {
+            const id = document.getElementById('edit-match-id').value;
+            const matches = getMatches();
+            const idx = matches.findIndex(m => m.id === id);
+            if (idx < 0) return;
+            matches[idx].matchDate = document.getElementById('em-date').value;
+            matches[idx].tournament = document.getElementById('em-tournament').value;
+            matches[idx].runs = document.getElementById('em-runs').value;
+            matches[idx].balls = document.getElementById('em-balls').value;
+            matches[idx].wickets = document.getElementById('em-wickets').value;
+            matches[idx].overs = document.getElementById('em-overs').value;
+            matches[idx].bRuns = document.getElementById('em-bruns').value;
+            matches[idx].catches = document.getElementById('em-catches').value;
+            matches[idx].motm = document.getElementById('em-motm').checked;
+            saveMatches(matches);
+            closeModal('edit-match-modal');
+            loadAdminMatches();
+            showToast('Match updated!');
+        }
+        function doDeleteMatch(id) {
+            deleteMatch(id);
+            loadAdminMatches();
+            showToast('Match deleted');
+        }
+
+        function changePassword() {
+            const np = document.getElementById('new-pw').value.trim();
+            const cp = document.getElementById('confirm-pw').value.trim();
+            if (!np) { showToast('Enter a new password', 'error'); return; }
+            if (np !== cp) { showToast('Passwords do not match', 'error'); return; }
+            localStorage.setItem('crick_admin_pw', np);
+            document.getElementById('new-pw').value = '';
+            document.getElementById('confirm-pw').value = '';
+            showToast('Password updated!');
+        }
+
+        function confirmClearAll() {
+            if (confirm('⚠️ This will delete ALL players and matches. Are you absolutely sure?')) {
+                localStorage.removeItem('crick_players');
+                localStorage.removeItem('crick_matches');
+                showToast('All data cleared');
+                loadAdminPlayers();
+            }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+        // Close on outside click
+        document.querySelectorAll('.modal-overlay').forEach(o => {
+            o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); });
+        });
+    </script>
+</body>
+
+</html>

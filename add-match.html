@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Match — CricAnalytics Pro</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <div class="app-wrapper">
+        <nav class="sidebar" id="sidebar">
+            <button class="sidebar-close" id="sidebar-close">✕</button>
+            <div class="sidebar-logo">
+                <span class="cricket-emoji">🏏</span>
+                <div class="logo-text">CricAnalytics</div>
+                <div class="logo-sub">Pro Edition</div>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-section-title">Main</div>
+                <a class="nav-item" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+                <a class="nav-item" href="add-match.html"><span class="nav-icon">➕</span> Add Match</a>
+                <a class="nav-item" href="match-history.html"><span class="nav-icon">📋</span> Match History</a>
+                <div class="nav-section-title">Analysis</div>
+                <a class="nav-item" href="analysis.html"><span class="nav-icon">📊</span> Performance Analysis</a>
+                <a class="nav-item" href="players.html"><span class="nav-icon">👥</span> All Players</a>
+                <div class="nav-section-title">Account</div>
+                <a class="nav-item" href="#" onclick="handleLogout()"><span class="nav-icon">🚪</span> Logout</a>
+            </div>
+            <div class="sidebar-footer"><a class="admin-btn" href="admin.html">🔒 Admin Panel</a></div>
+        </nav>
+
+        <div class="main-content">
+            <div class="topbar">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <button class="hamburger" id="hamburger">☰</button>
+                    <h1>➕ Add Match Scorecard</h1>
+                </div>
+                <div class="topbar-right">
+                    <a href="match-history.html" class="btn btn-ghost btn-sm">📋 History</a>
+                </div>
+            </div>
+
+            <div class="page-content">
+                <div class="glass-card" style="max-width:800px">
+                    <div class="card-header">
+                        <h2>Match Details</h2>
+                        <span class="card-icon">📝</span>
+                    </div>
+                    <div class="card-body">
+                        <form id="match-form" onsubmit="handleSaveMatch(event)">
+
+                            <!-- Match Info Meta -->
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Match Date *</label>
+                                    <input type="date" id="matchDate" class="form-control" required />
+                                </div>
+                                <div class="form-group">
+                                    <label>Tournament Name</label>
+                                    <input type="text" id="tournament" class="form-control"
+                                        placeholder="e.g. Village Cup 2024" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Match Type *</label>
+                                <select id="matchType" class="form-control" required>
+                                    <option value="">— Select Match Type —</option>
+                                    <option value="Leather">🏏 Leather Ball</option>
+                                    <option value="Tennis">🎾 Tennis Ball</option>
+                                    <option value="Box">📦 Box Cricket</option>
+                                </select>
+                            </div>
+
+                            <!-- BATTING -->
+                            <div class="section-divider batting">
+                                <span>🏏 Batting Details</span>
+                            </div>
+                            <div class="form-row cols-3">
+                                <div class="form-group">
+                                    <label>Runs Scored</label>
+                                    <input type="number" id="runs" class="form-control" placeholder="0" min="0" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Balls Faced</label>
+                                    <input type="number" id="balls" class="form-control" placeholder="0" min="0" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Batting Position</label>
+                                    <input type="number" id="batPosition" class="form-control" placeholder="1-11"
+                                        min="1" max="11" />
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>4s</label>
+                                    <input type="number" id="fours" class="form-control" placeholder="0" min="0" />
+                                </div>
+                                <div class="form-group">
+                                    <label>6s</label>
+                                    <input type="number" id="sixes" class="form-control" placeholder="0" min="0" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Dismissal Type</label>
+                                <select id="dismissal" class="form-control">
+                                    <option value="Not Out">Not Out</option>
+                                    <option value="Caught">Caught</option>
+                                    <option value="LBW">LBW</option>
+                                    <option value="Bowled">Bowled</option>
+                                    <option value="Run Out">Run Out</option>
+                                    <option value="Stumped">Stumped</option>
+                                    <option value="Hit Wicket">Hit Wicket</option>
+                                    <option value="Retired">Retired</option>
+                                </select>
+                            </div>
+
+                            <!-- BOWLING -->
+                            <div class="section-divider bowling">
+                                <span>🎯 Bowling Details</span>
+                            </div>
+                            <div class="form-row cols-3">
+                                <div class="form-group">
+                                    <label>Overs Bowled</label>
+                                    <input type="number" id="overs" class="form-control" placeholder="0.0" min="0"
+                                        step="0.1" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Runs Conceded</label>
+                                    <input type="number" id="bRuns" class="form-control" placeholder="0" min="0" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Wickets Taken</label>
+                                    <input type="number" id="wickets" class="form-control" placeholder="0" min="0" />
+                                </div>
+                            </div>
+                            <div class="form-row cols-3">
+                                <div class="form-group">
+                                    <label>Maidens</label>
+                                    <input type="number" id="maidens" class="form-control" placeholder="0" min="0" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Wide Balls</label>
+                                    <input type="number" id="wides" class="form-control" placeholder="0" min="0" />
+                                </div>
+                                <div class="form-group">
+                                    <label>No Balls</label>
+                                    <input type="number" id="noballs" class="form-control" placeholder="0" min="0" />
+                                </div>
+                            </div>
+
+                            <!-- FIELDING -->
+                            <div class="section-divider fielding">
+                                <span>🧤 Fielding Details</span>
+                            </div>
+                            <div class="form-row cols-3">
+                                <div class="form-group">
+                                    <label>Catches</label>
+                                    <input type="number" id="catches" class="form-control" placeholder="0" min="0" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Run Outs</label>
+                                    <input type="number" id="runouts" class="form-control" placeholder="0" min="0" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Stumpings</label>
+                                    <input type="number" id="stumpings" class="form-control" placeholder="0" min="0" />
+                                </div>
+                            </div>
+
+                            <!-- MOTM -->
+                            <div class="section-divider motm">
+                                <span>🏆 Award</span>
+                            </div>
+                            <div class="form-check" onclick="toggleMOTM()">
+                                <input type="checkbox" id="motm" />
+                                <label for="motm">🏆 Man of the Match Award</label>
+                            </div>
+
+                            <div style="display:flex;gap:12px;margin-top:28px;justify-content:flex-end">
+                                <a href="dashboard.html" class="btn btn-outline">Cancel</a>
+                                <button type="submit" class="btn btn-gold">💾 Save Match</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Live Strike Rate Preview -->
+                <div style="max-width:800px;margin-top:20px">
+                    <div class="glass-card glass-card-gold" style="padding:16px 24px">
+                        <div
+                            style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">
+                            ⚡ Live Preview</div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px">
+                            <div class="player-mini-stat">
+                                <div class="val" id="prev-sr">0.00</div>
+                                <div class="lbl">Strike Rate</div>
+                            </div>
+                            <div class="player-mini-stat">
+                                <div class="val" id="prev-eco">0.00</div>
+                                <div class="lbl">Economy Rate</div>
+                            </div>
+                            <div class="player-mini-stat">
+                                <div class="val" id="prev-boundary">0</div>
+                                <div class="lbl">Boundaries</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+    <script src="app.js"></script>
+    <script>
+        requireLogin();
+
+        // Set today's date
+        document.getElementById('matchDate').valueAsDate = new Date();
+
+        function toggleMOTM() {
+            const cb = document.getElementById('motm');
+            cb.checked = !cb.checked;
+        }
+
+        // Live preview
+        ['runs', 'balls', 'bRuns', 'overs', 'fours', 'sixes'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', updatePreview);
+        });
+        function updatePreview() {
+            const runs = parseInt(document.getElementById('runs').value) || 0;
+            const balls = parseInt(document.getElementById('balls').value) || 0;
+            const bRuns = parseInt(document.getElementById('bRuns').value) || 0;
+            const overs = parseFloat(document.getElementById('overs').value) || 0;
+            const fours = parseInt(document.getElementById('fours').value) || 0;
+            const sixes = parseInt(document.getElementById('sixes').value) || 0;
+            const sr = balls > 0 ? ((runs / balls) * 100).toFixed(2) : '0.00';
+            const eco = overs > 0 ? (bRuns / overs).toFixed(2) : '0.00';
+            document.getElementById('prev-sr').textContent = sr;
+            document.getElementById('prev-eco').textContent = eco;
+            document.getElementById('prev-boundary').textContent = fours + sixes;
+        }
+
+        function handleSaveMatch(e) {
+            e.preventDefault();
+            const player = getCurrentPlayer();
+
+            const match = {
+                id: generateMatchId(),
+                playerMobile: player.mobile,
+                matchDate: document.getElementById('matchDate').value,
+                tournament: document.getElementById('tournament').value.trim(),
+                matchType: document.getElementById('matchType').value,
+                runs: document.getElementById('runs').value || '0',
+                balls: document.getElementById('balls').value || '0',
+                fours: document.getElementById('fours').value || '0',
+                sixes: document.getElementById('sixes').value || '0',
+                dismissal: document.getElementById('dismissal').value,
+                batPosition: document.getElementById('batPosition').value || '0',
+                overs: document.getElementById('overs').value || '0',
+                bRuns: document.getElementById('bRuns').value || '0',
+                wickets: document.getElementById('wickets').value || '0',
+                maidens: document.getElementById('maidens').value || '0',
+                wides: document.getElementById('wides').value || '0',
+                noballs: document.getElementById('noballs').value || '0',
+                catches: document.getElementById('catches').value || '0',
+                runouts: document.getElementById('runouts').value || '0',
+                stumpings: document.getElementById('stumpings').value || '0',
+                motm: document.getElementById('motm').checked,
+                savedAt: new Date().toISOString(),
+            };
+
+            if (!match.matchType) { showToast('Please select a match type', 'error'); return; }
+
+            saveMatch(match);
+            showToast('Match saved successfully! 🏏');
+            setTimeout(() => window.location.href = 'dashboard.html', 800);
+        }
+
+        function handleLogout() {
+            clearCurrentPlayer();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CricAnalytics Pro — Login</title>
+  <meta name="description" content="Cricket Player Performance Analysis System — Login or Register" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .login-page { position: relative; z-index: 1; }
+    .type-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .type-btn {
+      padding: 10px 6px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: center;
+      transition: var(--transition);
+    }
+    .type-btn.selected, .type-btn:hover {
+      background: rgba(245,166,35,0.15);
+      border-color: rgba(245,166,35,0.5);
+      color: var(--accent-gold);
+    }
+    .role-selector {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .features-list {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--glass-border);
+    }
+    .features-list p { font-size: 0.72rem; color: var(--text-muted); text-align: center; margin-bottom: 16px; letter-spacing: 1px; text-transform: uppercase; }
+    .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .feature-item {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.78rem; color: var(--text-secondary);
+    }
+    .feature-item .fi { font-size: 1rem; }
+    #welcome-name { color: var(--accent-gold); }
+    .or-divider { text-align: center; font-size: 0.78rem; color: var(--text-muted); margin: 18px 0; position: relative; }
+    .or-divider::before, .or-divider::after { content:''; position:absolute; top:50%; width: 40%; height:1px; background: var(--glass-border); }
+    .or-divider::before { left:0; } .or-divider::after { right:0; }
+    .all-players-link { display: block; text-align: center; margin-top: 16px; font-size: 0.8rem; color: var(--text-muted); text-decoration: none; transition: var(--transition); }
+    .all-players-link:hover { color: var(--accent-gold); }
+  </style>
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-logo">
+        <span class="emoji">🏏</span>
+        <h1>CricAnalytics Pro</h1>
+        <p>Player Performance System</p>
+      </div>
+
+      <div class="login-tabs">
+        <div class="login-tab active" id="tab-login" onclick="switchTab('login')">Login</div>
+        <div class="login-tab" id="tab-register" onclick="switchTab('register')">Register</div>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div id="form-login">
+        <div class="form-group">
+          <label>Mobile Number</label>
+          <input type="tel" id="login-mobile" class="form-control" placeholder="Enter your mobile number" maxlength="10" />
+        </div>
+        <button class="btn btn-gold w-full" style="width:100%;justify-content:center" onclick="handleLogin()">
+          🔑 Login to Dashboard
+        </button>
+        <div class="or-divider">or</div>
+        <a href="players.html" class="all-players-link">👥 Browse All Players</a>
+        <a href="admin.html" class="all-players-link">🔒 Admin Panel</a>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="form-register" style="display:none">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="reg-name" class="form-control" placeholder="Enter your full name" />
+        </div>
+        <div class="form-group">
+          <label>Mobile Number (Unique ID)</label>
+          <input type="tel" id="reg-mobile" class="form-control" placeholder="10-digit mobile number" maxlength="10" />
+        </div>
+        <div class="form-group">
+          <label>Match Type</label>
+          <div class="type-selector">
+            <div class="type-btn" data-type="Leather" onclick="selectType(this, 'matchType')">🏏 Leather</div>
+            <div class="type-btn" data-type="Tennis" onclick="selectType(this, 'matchType')">🎾 Tennis</div>
+            <div class="type-btn" data-type="Box" onclick="selectType(this, 'matchType')">📦 Box</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Playing Role</label>
+          <div class="role-selector">
+            <div class="type-btn" data-role="Batsman" onclick="selectType(this, 'role')">🏏 Batsman</div>
+            <div class="type-btn" data-role="Bowler" onclick="selectType(this, 'role')">🎯 Bowler</div>
+            <div class="type-btn" data-role="All-Rounder" onclick="selectType(this, 'role')">⭐ All-Rounder</div>
+            <div class="type-btn" data-role="Wicketkeeper" onclick="selectType(this, 'role')">🧤 Keeper</div>
+          </div>
+        </div>
+        <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="handleRegister()">
+          📝 Create Profile
+        </button>
+      </div>
+
+      <div class="features-list">
+        <p>What you get</p>
+        <div class="features-grid">
+          <div class="feature-item"><span class="fi">📊</span> Career Stats</div>
+          <div class="feature-item"><span class="fi">🎯</span> Smart Insights</div>
+          <div class="feature-item"><span class="fi">📈</span> Performance Trend</div>
+          <div class="feature-item"><span class="fi">🏆</span> Match History</div>
+          <div class="feature-item"><span class="fi">📥</span> Export Reports</div>
+          <div class="feature-item"><span class="fi">🔒</span> Secure & Private</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script src="app.js"></script>
+  <script>
+    let selectedMatchType = '';
+    let selectedRole = '';
+
+    function switchTab(tab) {
+      document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+      document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+      document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
+      document.getElementById('form-register').style.display = tab === 'register' ? 'block' : 'none';
+    }
+
+    function selectType(el, group) {
+      const selector = group === 'matchType' ? '.type-selector' : '.role-selector';
+      document.querySelectorAll(`${selector} .type-btn`).forEach(b => b.classList.remove('selected'));
+      el.classList.add('selected');
+      if (group === 'matchType') selectedMatchType = el.dataset.type;
+      else selectedRole = el.dataset.role;
+    }
+
+    function handleLogin() {
+      const mobile = document.getElementById('login-mobile').value.trim();
+      if (!mobile || mobile.length < 10) { showToast('Enter a valid 10-digit mobile number', 'error'); return; }
+      const player = getPlayerByMobile(mobile);
+      if (!player) { showToast('Player not found. Please register first.', 'error'); return; }
+      setCurrentPlayer(mobile);
+      showToast(`Welcome back, ${player.name}! 🏏`);
+      setTimeout(() => window.location.href = 'dashboard.html', 800);
+    }
+
+    function handleRegister() {
+      const name = document.getElementById('reg-name').value.trim();
+      const mobile = document.getElementById('reg-mobile').value.trim();
+      if (!name) { showToast('Enter your name', 'error'); return; }
+      if (!mobile || mobile.length < 10) { showToast('Enter a valid 10-digit mobile', 'error'); return; }
+      if (!selectedMatchType) { showToast('Select a match type', 'error'); return; }
+      if (!selectedRole) { showToast('Select your playing role', 'error'); return; }
+      if (getPlayerByMobile(mobile)) { showToast('Mobile already registered. Login instead.', 'error'); return; }
+
+      const player = { name, mobile, matchType: selectedMatchType, role: selectedRole, createdAt: new Date().toISOString() };
+      savePlayer(player);
+      setCurrentPlayer(mobile);
+      showToast(`Welcome to CricAnalytics, ${name}! 🎉`);
+      setTimeout(() => window.location.href = 'dashboard.html', 800);
+    }
+
+    // Check if already logged in
+    if (getCurrentPlayer()) {
+      window.location.href = 'dashboard.html';
+    }
+  </script>
+</body>
+</html>
