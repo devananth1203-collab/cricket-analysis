@@ -166,80 +166,106 @@
     </nav>
 
     <div id="toast-container" class="toast-container"></div>
+    <div id="db-loading"
+        style="display:none;position:fixed;inset:0;background:rgba(10,15,30,0.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+        <div style="font-size:2rem;animation:spin 1s linear infinite">⏳</div>
+        <div style="color:var(--accent-gold);font-weight:700">Loading dashboard…</div>
+    </div>
+    <style>
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="app.js"></script>
     <script src="charts.js"></script>
     <script>
-        requireLogin();
+        document.getElementById('db-loading').style.display = 'flex';
+        initDB().then(() => {
+            document.getElementById('db-loading').style.display = 'none';
+            initPage();
+        }).catch(() => {
+            document.getElementById('db-loading').style.display = 'none';
+            initPage();
+        });
 
-        const player = getCurrentPlayer();
-        const mobile = player.mobile;
-        const stats = calcStats(mobile);
+        function initPage() {
+            requireLogin();
 
-        // Topbar date
-        document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+            const player = getCurrentPlayer();
+            const mobile = player.mobile;
+            const stats = calcStats(mobile);
 
-        // Profile
-        document.getElementById('player-name').textContent = player.name;
-        document.getElementById('profile-avatar').textContent = initials(player.name);
-        document.getElementById('badge-type').textContent = '🏏 ' + player.matchType;
-        document.getElementById('badge-role').textContent = player.role;
-        document.getElementById('badge-mobile').textContent = '📱 ' + player.mobile;
+            // Topbar date
+            document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
 
-        // MOTM
-        if (stats.bat.motm > 0) {
-            document.getElementById('motm-section').style.display = 'block';
-            document.getElementById('motm-text').textContent = `${stats.bat.motm} Man of the Match Award${stats.bat.motm > 1 ? 's' : ''}`;
-        }
+            // Profile
+            document.getElementById('player-name').textContent = player.name;
+            document.getElementById('profile-avatar').textContent = initials(player.name);
+            document.getElementById('badge-type').textContent = '🏸 ' + player.matchType;
+            document.getElementById('badge-role').textContent = player.role;
+            document.getElementById('badge-mobile').textContent = '📱 ' + player.mobile;
 
-        // Export
-        document.getElementById('btn-export-txt').addEventListener('click', () => exportToText(mobile));
+            // MOTM
+            if (stats.bat.motm > 0) {
+                document.getElementById('motm-section').style.display = 'block';
+                document.getElementById('motm-text').textContent = `${stats.bat.motm} Man of the Match Award${stats.bat.motm > 1 ? 's' : ''}`;
+            }
 
-        // Stat card helper
-        function statCard(label, value, cls = '', extraClass = '') {
-            return `<div class="stat-card ${extraClass}">
+            // Export
+            document.getElementById('btn-export-txt').addEventListener('click', () => exportToText(mobile));
+
+            // Stat card helper
+            function statCard(label, value, cls = '', extraClass = '') {
+                return `<div class="stat-card ${extraClass}">
     <div class="stat-label">${label}</div>
     <div class="stat-value ${cls}">${value}</div>
   </div>`;
-        }
+            }
 
-        // Batting
-        document.getElementById('bat-stats-grid').innerHTML = [
-            statCard('Matches', stats.bat.total, 'gold'),
-            statCard('Total Runs', stats.bat.runs, 'gold'),
-            statCard('Highest Score', stats.bat.highest, ''),
-            statCard('Batting Avg', stats.avg, 'gold'),
-            statCard('Strike Rate', stats.sr, ''),
-            statCard('Total 4s', stats.bat.fours, '', 'green'),
-            statCard('Total 6s', stats.bat.sixes, 'green', 'green'),
-            statCard('50s', stats.bat.fifties, ''),
-            statCard('100s', stats.bat.hundreds, 'gold'),
-        ].join('');
+            // Batting
+            document.getElementById('bat-stats-grid').innerHTML = [
+                statCard('Matches', stats.bat.total, 'gold'),
+                statCard('Total Runs', stats.bat.runs, 'gold'),
+                statCard('Highest Score', stats.bat.highest, ''),
+                statCard('Batting Avg', stats.avg, 'gold'),
+                statCard('Strike Rate', stats.sr, ''),
+                statCard('Total 4s', stats.bat.fours, '', 'green'),
+                statCard('Total 6s', stats.bat.sixes, 'green', 'green'),
+                statCard('50s', stats.bat.fifties, ''),
+                statCard('100s', stats.bat.hundreds, 'gold'),
+            ].join('');
 
-        // Bowling
-        document.getElementById('bowl-stats-grid').innerHTML = [
-            statCard('Wickets', stats.bowl.wickets, 'green', 'green'),
-            statCard('Best Bowling', stats.bestBowl, 'green'),
-            statCard('Economy', stats.eco, ''),
-            statCard('Bowl Avg', stats.ba, ''),
-            statCard('Maidens', stats.bowl.maidens, '', 'green'),
-            statCard('Wides', stats.bowl.wides, '', 'red'),
-        ].join('');
+            // Bowling
+            document.getElementById('bowl-stats-grid').innerHTML = [
+                statCard('Wickets', stats.bowl.wickets, 'green', 'green'),
+                statCard('Best Bowling', stats.bestBowl, 'green'),
+                statCard('Economy', stats.eco, ''),
+                statCard('Bowl Avg', stats.ba, ''),
+                statCard('Maidens', stats.bowl.maidens, '', 'green'),
+                statCard('Wides', stats.bowl.wides, '', 'red'),
+            ].join('');
 
-        // Fielding
-        document.getElementById('field-stats-grid').innerHTML = [
-            statCard('Catches', stats.field.catches, '', 'green'),
-            statCard('Run Outs', stats.field.runouts, 'green'),
-            statCard('Stumpings', stats.field.stumpings, '', 'purple'),
-        ].join('');
+            // Fielding
+            document.getElementById('field-stats-grid').innerHTML = [
+                statCard('Catches', stats.field.catches, '', 'green'),
+                statCard('Run Outs', stats.field.runouts, 'green'),
+                statCard('Stumpings', stats.field.stumpings, '', 'purple'),
+            ].join('');
 
-        // Recent matches table
-        const matches = getMatchesByPlayer(mobile).slice(0, 5);
-        const tbody = document.getElementById('recent-tbody');
-        if (!matches.length) {
-            document.querySelector('#recent-table').style.display = 'none';
-            document.getElementById('no-matches-msg').style.display = 'block';
-        } else {
-            tbody.innerHTML = matches.map(m => `
+            // Recent matches table
+            const matches = getMatchesByPlayer(mobile).slice(0, 5);
+            const tbody = document.getElementById('recent-tbody');
+            if (!matches.length) {
+                document.querySelector('#recent-table').style.display = 'none';
+                document.getElementById('no-matches-msg').style.display = 'block';
+            } else {
+                tbody.innerHTML = matches.map(m => `
     <tr>
       <td>${fmtDate(m.matchDate)}</td>
       <td class="highlight">${m.tournament || '-'}</td>
@@ -249,17 +275,18 @@
       <td>${m.catches || 0}</td>
       <td>${m.motm ? '🏆' : '-'}</td>
     </tr>`).join('');
-        }
+            }
 
-        // Charts
-        const lastFive = getLastNMatches(mobile, 5);
-        const chartLabels = lastFive.map(m => fmtDate(m.matchDate).slice(0, 6));
-        const runsArr = lastFive.map(m => parseInt(m.runs) || 0);
-        const wktsArr = lastFive.map(m => parseInt(m.wickets) || 0);
-        setTimeout(() => {
-            drawBarChart('chart-runs', chartLabels, runsArr, '#c8860a');
-            drawLineChart('chart-wickets', chartLabels, wktsArr, '#1a9b75');
-        }, 50);
+            // Charts
+            const lastFive = getLastNMatches(mobile, 5);
+            const chartLabels = lastFive.map(m => fmtDate(m.matchDate).slice(0, 6));
+            const runsArr = lastFive.map(m => parseInt(m.runs) || 0);
+            const wktsArr = lastFive.map(m => parseInt(m.wickets) || 0);
+            setTimeout(() => {
+                drawBarChart('chart-runs', chartLabels, runsArr, '#c8860a');
+                drawLineChart('chart-wickets', chartLabels, wktsArr, '#1a9b75');
+            }, 50);
+        } // end initPage
 
         function handleLogout() {
             clearCurrentPlayer();

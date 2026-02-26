@@ -212,20 +212,46 @@
     </nav>
 
     <div id="toast-container" class="toast-container"></div>
+    <div id="db-loading"
+        style="display:none;position:fixed;inset:0;background:rgba(10,15,30,0.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+        <div style="font-size:2rem;animation:spin 1s linear infinite">⏳</div>
+        <div style="color:var(--accent-gold);font-weight:700">Loading analysis…</div>
+    </div>
+    <style>
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="app.js"></script>
     <script src="charts.js"></script>
     <script>
-        requireLogin();
-        const player = getCurrentPlayer();
-        const stats = calcStats(player.mobile);
-        const lastFive = getLastNMatches(player.mobile, 5);
-        const allMatches = getMatchesByPlayer(player.mobile);
+        document.getElementById('db-loading').style.display = 'flex';
+        initDB().then(() => {
+            document.getElementById('db-loading').style.display = 'none';
+            initPage();
+        }).catch(() => {
+            document.getElementById('db-loading').style.display = 'none';
+            initPage();
+        });
 
-        document.getElementById('btn-export').addEventListener('click', () => exportToText(player.mobile));
+        function initPage() {
+            requireLogin();
+            const player = getCurrentPlayer();
+            const stats = calcStats(player.mobile);
+            const lastFive = getLastNMatches(player.mobile, 5);
+            const allMatches = getMatchesByPlayer(player.mobile);
 
-        // ===== INSIGHTS =====
-        const insights = getInsights(stats);
-        document.getElementById('insights-container').innerHTML = insights.map(ins => `
+            document.getElementById('btn-export').addEventListener('click', () => exportToText(player.mobile));
+
+            // ===== INSIGHTS =====
+            const insights = getInsights(stats);
+            document.getElementById('insights-container').innerHTML = insights.map(ins => `
   <div class="insight-card ${ins.type}">
     <div class="insight-emoji">${ins.emoji}</div>
     <div class="insight-text">
@@ -235,19 +261,19 @@
   </div>
 `).join('');
 
-        // ===== TREND CHARTS =====
-        const trendLabels = lastFive.map((m, i) => `M${i + 1}`);
-        const trendRuns = lastFive.map(m => parseInt(m.runs) || 0);
-        const trendWkts = lastFive.map(m => parseInt(m.wickets) || 0);
-        const trendDates = lastFive.map(m => fmtDate(m.matchDate));
+            // ===== TREND CHARTS =====
+            const trendLabels = lastFive.map((m, i) => `M${i + 1}`);
+            const trendRuns = lastFive.map(m => parseInt(m.runs) || 0);
+            const trendWkts = lastFive.map(m => parseInt(m.wickets) || 0);
+            const trendDates = lastFive.map(m => fmtDate(m.matchDate));
 
-        setTimeout(() => {
-            drawLineChart('trend-runs', trendLabels, trendRuns, '#c8860a');
-            drawBarChart('trend-wkts', trendLabels, trendWkts, '#1a9b75');
+            setTimeout(() => {
+                drawLineChart('trend-runs', trendLabels, trendRuns, '#c8860a');
+                drawBarChart('trend-wkts', trendLabels, trendWkts, '#1a9b75');
 
-            // Run bars detail
-            const maxR = Math.max(...trendRuns, 1);
-            document.getElementById('trend-runs-bars').innerHTML = lastFive.map((m, i) => `
+                // Run bars detail
+                const maxR = Math.max(...trendRuns, 1);
+                document.getElementById('trend-runs-bars').innerHTML = lastFive.map((m, i) => `
     <div class="trend-bar-wrap">
       <span class="trend-label">${trendDates[i]}</span>
       <div class="progress-bar-wrap" style="flex:1">
@@ -257,8 +283,8 @@
     </div>
   `).join('') || '<p style="color:var(--text-muted);font-size:0.85rem">No data yet</p>';
 
-            const maxW = Math.max(...trendWkts, 1);
-            document.getElementById('trend-wkts-bars').innerHTML = lastFive.map((m, i) => `
+                const maxW = Math.max(...trendWkts, 1);
+                document.getElementById('trend-wkts-bars').innerHTML = lastFive.map((m, i) => `
     <div class="trend-bar-wrap">
       <span class="trend-label">${trendDates[i]}</span>
       <div class="progress-bar-wrap" style="flex:1">
@@ -268,21 +294,21 @@
     </div>
   `).join('') || '<p style="color:var(--text-muted);font-size:0.85rem">No data yet</p>';
 
-            // All runs chart
-            const allLabels = allMatches.slice().reverse().map((m, i) => `M${i + 1}`);
-            const allRunsArr = allMatches.slice().reverse().map(m => parseInt(m.runs) || 0);
-            drawBarChart('chart-all-runs', allLabels, allRunsArr, '#c8860a');
-        }, 50);
+                // All runs chart
+                const allLabels = allMatches.slice().reverse().map((m, i) => `M${i + 1}`);
+                const allRunsArr = allMatches.slice().reverse().map(m => parseInt(m.runs) || 0);
+                drawBarChart('chart-all-runs', allLabels, allRunsArr, '#c8860a');
+            }, 50);
 
-        // ===== LAST 5 vs CAREER =====
-        const l5Runs = trendRuns.reduce((a, b) => a + b, 0);
-        const l5Avg = trendRuns.length ? (l5Runs / trendRuns.length).toFixed(1) : 0;
-        const l5Wkts = trendWkts.reduce((a, b) => a + b, 0);
-        const careerRunsPerMatch = stats.bat.total ? (stats.bat.runs / stats.bat.total).toFixed(1) : 0;
-        const careerWktsPerMatch = stats.bat.total ? (stats.bowl.wickets / stats.bat.total).toFixed(1) : 0;
+            // ===== LAST 5 vs CAREER =====
+            const l5Runs = trendRuns.reduce((a, b) => a + b, 0);
+            const l5Avg = trendRuns.length ? (l5Runs / trendRuns.length).toFixed(1) : 0;
+            const l5Wkts = trendWkts.reduce((a, b) => a + b, 0);
+            const careerRunsPerMatch = stats.bat.total ? (stats.bat.runs / stats.bat.total).toFixed(1) : 0;
+            const careerWktsPerMatch = stats.bat.total ? (stats.bowl.wickets / stats.bat.total).toFixed(1) : 0;
 
-        const formVsCareerRuns = parseFloat(l5Avg) >= parseFloat(careerRunsPerMatch);
-        document.getElementById('compare-section').innerHTML = `
+            const formVsCareerRuns = parseFloat(l5Avg) >= parseFloat(careerRunsPerMatch);
+            document.getElementById('compare-section').innerHTML = `
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
     <div class="type-stat-card">
       <h4>Career Avg. Runs/Match</h4>
@@ -302,18 +328,19 @@
   </div>
 `;
 
-        // ===== BY TYPE =====
-        const TYPES = ['Leather', 'Tennis', 'Box'];
-        document.getElementById('type-compare').innerHTML = TYPES.map(t => {
-            const d = stats.byType[t];
-            return `<div class="type-stat-card">
+            // ===== BY TYPE =====
+            const TYPES = ['Leather', 'Tennis', 'Box'];
+            document.getElementById('type-compare').innerHTML = TYPES.map(t => {
+                const d = stats.byType[t];
+                return `<div class="type-stat-card">
     <h4>${t === 'Leather' ? '🏏' : t === 'Tennis' ? '🎾' : '📦'} ${t} Ball</h4>
     <div class="big">${d.runs}</div>
     <div class="sub">${d.matches} matches · ${d.wickets} wickets</div>
   </div>`;
-        }).join('');
+            }).join('');
 
-        function handleLogout() { clearCurrentPlayer(); window.location.href = 'index.html'; }
+            function handleLogout() { clearCurrentPlayer(); window.location.href = 'index.html'; }
+        } // end initPage
     </script>
 </body>
 

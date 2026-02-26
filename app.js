@@ -1,16 +1,23 @@
 // ===== CRICKET ANALYSIS - CORE APP JS =====
+// Data is stored ONLINE via Firebase Realtime Database (see firebase-config.js)
+// Falls back to localStorage if Firebase is not configured.
 
-// ===== LOCAL STORAGE KEYS =====
-const LS_PLAYERS = 'crick_players';
-const LS_MATCHES = 'crick_matches';
-const LS_ADMIN_PW = 'crick_admin_pw';
+// ===== SYNC CACHE ACCESSORS =====
+// These are called by all existing page code synchronously.
+// The cache is pre-loaded at page load (see initDB below).
 
-// ===== PLAYER HELPERS =====
 function getPlayers() {
-  return JSON.parse(localStorage.getItem(LS_PLAYERS) || '[]');
+  return _playersCache || JSON.parse(localStorage.getItem('crick_players') || '[]');
 }
 function savePlayers(players) {
-  localStorage.setItem(LS_PLAYERS, JSON.stringify(players));
+  _playersCache = players;
+  if (!firebaseEnabled) localStorage.setItem('crick_players', JSON.stringify(players));
+  // Save to Firebase (async, background)
+  if (firebaseEnabled) {
+    const obj = {};
+    players.forEach(p => { obj[p.mobile.replace(/[.#$[\]]/g, '_')] = p; });
+    fbWrite('players', Object.keys(obj).length ? obj : null).catch(console.error);
+  }
 }
 function getPlayerByMobile(mobile) {
   return getPlayers().find(p => p.mobile === mobile) || null;
@@ -31,10 +38,17 @@ function deletePlayer(mobile) {
 
 // ===== MATCH HELPERS =====
 function getMatches() {
-  return JSON.parse(localStorage.getItem(LS_MATCHES) || '[]');
+  return _matchesCache || JSON.parse(localStorage.getItem('crick_matches') || '[]');
 }
 function saveMatches(matches) {
-  localStorage.setItem(LS_MATCHES, JSON.stringify(matches));
+  _matchesCache = matches;
+  if (!firebaseEnabled) {
+    localStorage.setItem('crick_matches', JSON.stringify(matches));
+    return;
+  }
+  const obj = {};
+  matches.forEach(m => { obj[m.id] = m; });
+  fbWrite('matches', Object.keys(obj).length ? obj : null).catch(console.error);
 }
 function getMatchesByPlayer(mobile) {
   return getMatches().filter(m => m.playerMobile === mobile)
@@ -52,6 +66,30 @@ function deleteMatch(id) {
 }
 function generateMatchId() {
   return 'match_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+}
+
+// ===== ADMIN HELPERS =====
+const DEFAULT_ADMIN_PW = 'admin@cricket123';
+function getAdminPw() {
+  return _adminPwCache || localStorage.getItem('crick_admin_pw') || DEFAULT_ADMIN_PW;
+}
+function checkAdmin(pw) { return pw === getAdminPw(); }
+
+// ===== SESSION (current player) =====
+function getCurrentPlayer() {
+  const m = sessionStorage.getItem('current_player');
+  return m ? getPlayerByMobile(m) : null;
+}
+function setCurrentPlayer(mobile) {
+  sessionStorage.setItem('current_player', mobile);
+}
+function clearCurrentPlayer() {
+  sessionStorage.removeItem('current_player');
+}
+function requireLogin() {
+  if (!getCurrentPlayer()) {
+    window.location.href = 'index.html';
+  }
 }
 
 // ===== STATS CALCULATION =====
@@ -73,10 +111,10 @@ function calcStats(mobile) {
     const r = parseInt(m.runs) || 0;
     const b = parseInt(m.balls) || 0;
     const out = m.dismissal !== 'Not Out' && m.dismissal !== '';
-    bat.runs     += r;
-    bat.balls    += b;
-    bat.fours    += parseInt(m.fours) || 0;
-    bat.sixes    += parseInt(m.sixes) || 0;
+    bat.runs += r;
+    bat.balls += b;
+    bat.fours += parseInt(m.fours) || 0;
+    bat.sixes += parseInt(m.sixes) || 0;
     if (out) bat.dismissals++;
     else bat.notOuts++;
     if (r > bat.highest) bat.highest = r;
@@ -84,18 +122,17 @@ function calcStats(mobile) {
     else if (r >= 50) bat.fifties++;
     if (m.motm) bat.motm++;
 
-    bowl.overs   += parseFloat(m.overs) || 0;
-    bowl.runs    += parseInt(m.bRuns) || 0;
+    bowl.overs += parseFloat(m.overs) || 0;
+    bowl.runs += parseInt(m.bRuns) || 0;
     bowl.wickets += parseInt(m.wickets) || 0;
     bowl.maidens += parseInt(m.maidens) || 0;
-    bowl.wides   += parseInt(m.wides) || 0;
+    bowl.wides += parseInt(m.wides) || 0;
     bowl.noballs += parseInt(m.noballs) || 0;
 
-    field.catches  += parseInt(m.catches) || 0;
-    field.runouts  += parseInt(m.runouts) || 0;
+    field.catches += parseInt(m.catches) || 0;
+    field.runouts += parseInt(m.runouts) || 0;
     field.stumpings += parseInt(m.stumpings) || 0;
 
-    // By match type aggregation
     const type = m.matchType;
     if (byType[type]) {
       byType[type].matches++;
@@ -105,9 +142,9 @@ function calcStats(mobile) {
   });
 
   const avg = bat.dismissals > 0 ? (bat.runs / bat.dismissals).toFixed(2) : bat.runs.toFixed(2);
-  const sr  = bat.balls > 0 ? ((bat.runs / bat.balls) * 100).toFixed(2) : '0.00';
+  const sr = bat.balls > 0 ? ((bat.runs / bat.balls) * 100).toFixed(2) : '0.00';
   const eco = bowl.overs > 0 ? (bowl.runs / bowl.overs).toFixed(2) : '0.00';
-  const ba  = bowl.wickets > 0 ? (bowl.runs / bowl.wickets).toFixed(2) : '∞';
+  const ba = bowl.wickets > 0 ? (bowl.runs / bowl.wickets).toFixed(2) : '∞';
 
   let bestBowl = '-';
   let bestW = 0, bestR = Infinity;
@@ -129,8 +166,6 @@ function defaultStats() {
 function getInsights(stats) {
   const insights = [];
   const { bat, bowl, avg, sr, eco, ba } = stats;
-
-  // Batting insights
   const srNum = parseFloat(sr);
   const avgNum = parseFloat(avg);
   const ecoNum = parseFloat(eco);
@@ -169,30 +204,6 @@ function getInsights(stats) {
 // ===== LAST N MATCH TREND =====
 function getLastNMatches(mobile, n = 5) {
   return getMatchesByPlayer(mobile).slice(0, n).reverse();
-}
-
-// ===== ADMIN HELPERS =====
-const DEFAULT_ADMIN_PW = 'admin@cricket123';
-function getAdminPw() {
-  return localStorage.getItem(LS_ADMIN_PW) || DEFAULT_ADMIN_PW;
-}
-function checkAdmin(pw) { return pw === getAdminPw(); }
-
-// ===== SESSION (current player) =====
-function getCurrentPlayer() {
-  const m = sessionStorage.getItem('current_player');
-  return m ? getPlayerByMobile(m) : null;
-}
-function setCurrentPlayer(mobile) {
-  sessionStorage.setItem('current_player', mobile);
-}
-function clearCurrentPlayer() {
-  sessionStorage.removeItem('current_player');
-}
-function requireLogin() {
-  if (!getCurrentPlayer()) {
-    window.location.href = 'index.html';
-  }
 }
 
 // ===== TOAST =====
@@ -248,9 +259,7 @@ function fmt(v, decimals = 2) {
   const n = parseFloat(v);
   return isNaN(n) ? '-' : n.toFixed(decimals);
 }
-function fmtInt(v) {
-  return parseInt(v) || 0;
-}
+function fmtInt(v) { return parseInt(v) || 0; }
 function fmtDate(d) {
   if (!d) return '-';
   const dt = new Date(d);
@@ -290,16 +299,33 @@ function exportToText(mobile) {
 
   txt += `MATCH HISTORY\n${'-'.repeat(30)}\n`;
   matches.forEach((m, i) => {
-    txt += `${i+1}. ${fmtDate(m.matchDate)} | ${m.tournament || '-'} | ${m.matchType}\n`;
+    txt += `${i + 1}. ${fmtDate(m.matchDate)} | ${m.tournament || '-'} | ${m.matchType}\n`;
     txt += `   Bat: ${m.runs}(${m.balls}) | Bowl: ${m.wickets}/${m.bRuns} (${m.overs} ov) | Catches: ${m.catches}\n`;
   });
 
   const blob = new Blob([txt], { type: 'text/plain' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `${player.name.replace(/ /g,'_')}_career.txt`;
+  a.download = `${player.name.replace(/ /g, '_')}_career.txt`;
   a.click();
   showToast('Career stats downloaded!');
+}
+
+// ===== DB INIT — LOADS DATA INTO CACHE ON PAGE LOAD =====
+// All pages call this so the sync functions work correctly
+async function initDB() {
+  try {
+    await Promise.all([
+      loadPlayersFromDB(),
+      loadMatchesFromDB(),
+      loadAdminPwFromDB()
+    ]);
+  } catch (e) {
+    console.warn('[CricDB] Failed to load from Firebase, falling back to localStorage', e);
+    _playersCache = JSON.parse(localStorage.getItem('crick_players') || '[]');
+    _matchesCache = JSON.parse(localStorage.getItem('crick_matches') || '[]');
+    _adminPwCache = localStorage.getItem('crick_admin_pw') || 'admin@cricket123';
+  }
 }
 
 // ===== INIT =====

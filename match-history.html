@@ -121,31 +121,57 @@
     </nav>
 
     <div id="toast-container" class="toast-container"></div>
+    <div id="db-loading"
+        style="display:none;position:fixed;inset:0;background:rgba(10,15,30,0.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+        <div style="font-size:2rem;animation:spin 1s linear infinite">⏳</div>
+        <div style="color:var(--accent-gold);font-weight:700">Loading history…</div>
+    </div>
+    <style>
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="app.js"></script>
     <script>
-        requireLogin();
-        const player = getCurrentPlayer();
-        let allMatches = getMatchesByPlayer(player.mobile);
-        let deleteTargetId = null;
+        document.getElementById('db-loading').style.display = 'flex';
+        initDB().then(() => {
+            document.getElementById('db-loading').style.display = 'none';
+            initPage();
+        }).catch(() => {
+            document.getElementById('db-loading').style.display = 'none';
+            initPage();
+        });
 
-        function render(matches) {
-            const tbody = document.getElementById('history-tbody');
-            const empty = document.getElementById('empty-history');
-            const table = document.getElementById('history-table');
-            document.getElementById('match-count').textContent = `${matches.length} match${matches.length !== 1 ? 'es' : ''}`;
+        function initPage() {
+            requireLogin();
+            const player = getCurrentPlayer();
+            let allMatches = getMatchesByPlayer(player.mobile);
+            let deleteTargetId = null;
 
-            if (!matches.length) {
-                table.style.display = 'none';
-                empty.style.display = 'block';
-                return;
-            }
-            table.style.display = '';
-            empty.style.display = 'none';
+            function render(matches) {
+                const tbody = document.getElementById('history-tbody');
+                const empty = document.getElementById('empty-history');
+                const table = document.getElementById('history-table');
+                document.getElementById('match-count').textContent = `${matches.length} match${matches.length !== 1 ? 'es' : ''}`;
 
-            tbody.innerHTML = matches.map((m, i) => {
-                const sr = m.balls > 0 ? ((m.runs / m.balls) * 100).toFixed(1) : '-';
-                const eco = m.overs > 0 ? (m.bRuns / m.overs).toFixed(2) : '-';
-                return `<tr>
+                if (!matches.length) {
+                    table.style.display = 'none';
+                    empty.style.display = 'block';
+                    return;
+                }
+                table.style.display = '';
+                empty.style.display = 'none';
+
+                tbody.innerHTML = matches.map((m, i) => {
+                    const sr = m.balls > 0 ? ((m.runs / m.balls) * 100).toFixed(1) : '-';
+                    const eco = m.overs > 0 ? (m.bRuns / m.overs).toFixed(2) : '-';
+                    return `<tr>
       <td class="text-muted">${i + 1}</td>
       <td>${fmtDate(m.matchDate)}</td>
       <td class="highlight">${m.tournament || '-'}</td>
@@ -162,47 +188,48 @@
       <td>${m.runouts || 0}</td>
       <td>${m.motm ? '🏆' : '-'}</td>
     </tr>`;
-            }).join('');
-        }
+                }).join('');
+            }
 
-        function applyFilters() {
-            const type = document.getElementById('filter-type').value;
-            const month = document.getElementById('filter-month').value;
-            const tourney = document.getElementById('filter-tournament').value.toLowerCase().trim();
-            let filtered = allMatches;
-            if (type) filtered = filtered.filter(m => m.matchType === type);
-            if (month) filtered = filtered.filter(m => m.matchDate && m.matchDate.startsWith(month));
-            if (tourney) filtered = filtered.filter(m => (m.tournament || '').toLowerCase().includes(tourney));
-            render(filtered);
-        }
+            function applyFilters() {
+                const type = document.getElementById('filter-type').value;
+                const month = document.getElementById('filter-month').value;
+                const tourney = document.getElementById('filter-tournament').value.toLowerCase().trim();
+                let filtered = allMatches;
+                if (type) filtered = filtered.filter(m => m.matchType === type);
+                if (month) filtered = filtered.filter(m => m.matchDate && m.matchDate.startsWith(month));
+                if (tourney) filtered = filtered.filter(m => (m.tournament || '').toLowerCase().includes(tourney));
+                render(filtered);
+            }
 
-        function clearFilters() {
-            document.getElementById('filter-type').value = '';
-            document.getElementById('filter-month').value = '';
-            document.getElementById('filter-tournament').value = '';
+            function clearFilters() {
+                document.getElementById('filter-type').value = '';
+                document.getElementById('filter-month').value = '';
+                document.getElementById('filter-tournament').value = '';
+                render(allMatches);
+            }
+
+            function openDeleteModal(id) {
+                deleteTargetId = id;
+                document.getElementById('delete-modal').classList.add('active');
+            }
+            function closeDeleteModal() {
+                deleteTargetId = null;
+                document.getElementById('delete-modal').classList.remove('active');
+            }
+            function confirmDelete() {
+                if (!deleteTargetId) return;
+                deleteMatch(deleteTargetId);
+                allMatches = getMatchesByPlayer(player.mobile);
+                applyFilters();
+                closeDeleteModal();
+                showToast('Match deleted');
+            }
+
+            function handleLogout() { clearCurrentPlayer(); window.location.href = 'index.html'; }
+
             render(allMatches);
-        }
-
-        function openDeleteModal(id) {
-            deleteTargetId = id;
-            document.getElementById('delete-modal').classList.add('active');
-        }
-        function closeDeleteModal() {
-            deleteTargetId = null;
-            document.getElementById('delete-modal').classList.remove('active');
-        }
-        function confirmDelete() {
-            if (!deleteTargetId) return;
-            deleteMatch(deleteTargetId);
-            allMatches = getMatchesByPlayer(player.mobile);
-            applyFilters();
-            closeDeleteModal();
-            showToast('Match deleted');
-        }
-
-        function handleLogout() { clearCurrentPlayer(); window.location.href = 'index.html'; }
-
-        render(allMatches);
+        } // end initPage
     </script>
 </body>
 

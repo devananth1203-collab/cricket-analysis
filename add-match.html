@@ -223,77 +223,104 @@
     </nav>
 
     <div id="toast-container" class="toast-container"></div>
+    <div id="db-loading"
+        style="display:none;position:fixed;inset:0;background:rgba(10,15,30,0.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+        <div style="font-size:2rem;animation:spin 1s linear infinite">⏳</div>
+        <div style="color:var(--accent-gold);font-weight:700">Loading…</div>
+    </div>
+    <style>
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="app.js"></script>
     <script>
-        requireLogin();
-
-        // Set today's date
-        document.getElementById('matchDate').valueAsDate = new Date();
-
-        function toggleMOTM() {
-            const cb = document.getElementById('motm');
-            cb.checked = !cb.checked;
-        }
-
-        // Live preview
-        ['runs', 'balls', 'bRuns', 'overs', 'fours', 'sixes'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener('input', updatePreview);
+        document.getElementById('db-loading').style.display = 'flex';
+        initDB().then(() => {
+            document.getElementById('db-loading').style.display = 'none';
+            initPage();
+        }).catch(() => {
+            document.getElementById('db-loading').style.display = 'none';
+            initPage();
         });
-        function updatePreview() {
-            const runs = parseInt(document.getElementById('runs').value) || 0;
-            const balls = parseInt(document.getElementById('balls').value) || 0;
-            const bRuns = parseInt(document.getElementById('bRuns').value) || 0;
-            const overs = parseFloat(document.getElementById('overs').value) || 0;
-            const fours = parseInt(document.getElementById('fours').value) || 0;
-            const sixes = parseInt(document.getElementById('sixes').value) || 0;
-            const sr = balls > 0 ? ((runs / balls) * 100).toFixed(2) : '0.00';
-            const eco = overs > 0 ? (bRuns / overs).toFixed(2) : '0.00';
-            document.getElementById('prev-sr').textContent = sr;
-            document.getElementById('prev-eco').textContent = eco;
-            document.getElementById('prev-boundary').textContent = fours + sixes;
-        }
 
-        function handleSaveMatch(e) {
-            e.preventDefault();
-            const player = getCurrentPlayer();
+        function initPage() {
+            requireLogin();
 
-            const match = {
-                id: generateMatchId(),
-                playerMobile: player.mobile,
-                matchDate: document.getElementById('matchDate').value,
-                tournament: document.getElementById('tournament').value.trim(),
-                matchType: document.getElementById('matchType').value,
-                runs: document.getElementById('runs').value || '0',
-                balls: document.getElementById('balls').value || '0',
-                fours: document.getElementById('fours').value || '0',
-                sixes: document.getElementById('sixes').value || '0',
-                dismissal: document.getElementById('dismissal').value,
-                batPosition: document.getElementById('batPosition').value || '0',
-                overs: document.getElementById('overs').value || '0',
-                bRuns: document.getElementById('bRuns').value || '0',
-                wickets: document.getElementById('wickets').value || '0',
-                maidens: document.getElementById('maidens').value || '0',
-                wides: document.getElementById('wides').value || '0',
-                noballs: document.getElementById('noballs').value || '0',
-                catches: document.getElementById('catches').value || '0',
-                runouts: document.getElementById('runouts').value || '0',
-                stumpings: document.getElementById('stumpings').value || '0',
-                motm: document.getElementById('motm').checked,
-                savedAt: new Date().toISOString(),
-            };
+            // Set today's date
+            document.getElementById('matchDate').valueAsDate = new Date();
 
-            if (!match.matchType) { showToast('Please select a match type', 'error'); return; }
+            function toggleMOTM() {
+                const cb = document.getElementById('motm');
+                cb.checked = !cb.checked;
+            }
 
-            saveMatch(match);
-            showToast('Match saved successfully! 🏏');
-            setTimeout(() => window.location.href = 'dashboard.html', 800);
-        }
+            // Live preview
+            ['runs', 'balls', 'bRuns', 'overs', 'fours', 'sixes'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', updatePreview);
+            });
+            function updatePreview() {
+                const runs = parseInt(document.getElementById('runs').value) || 0;
+                const balls = parseInt(document.getElementById('balls').value) || 0;
+                const bRuns = parseInt(document.getElementById('bRuns').value) || 0;
+                const overs = parseFloat(document.getElementById('overs').value) || 0;
+                const fours = parseInt(document.getElementById('fours').value) || 0;
+                const sixes = parseInt(document.getElementById('sixes').value) || 0;
+                const sr = balls > 0 ? ((runs / balls) * 100).toFixed(2) : '0.00';
+                const eco = overs > 0 ? (bRuns / overs).toFixed(2) : '0.00';
+                document.getElementById('prev-sr').textContent = sr;
+                document.getElementById('prev-eco').textContent = eco;
+                document.getElementById('prev-boundary').textContent = fours + sixes;
+            }
 
-        function handleLogout() {
-            clearCurrentPlayer();
-            window.location.href = 'index.html';
-        }
+            function handleSaveMatch(e) {
+                e.preventDefault();
+                const player = getCurrentPlayer();
+
+                const match = {
+                    id: generateMatchId(),
+                    playerMobile: player.mobile,
+                    matchDate: document.getElementById('matchDate').value,
+                    tournament: document.getElementById('tournament').value.trim(),
+                    matchType: document.getElementById('matchType').value,
+                    runs: document.getElementById('runs').value || '0',
+                    balls: document.getElementById('balls').value || '0',
+                    fours: document.getElementById('fours').value || '0',
+                    sixes: document.getElementById('sixes').value || '0',
+                    dismissal: document.getElementById('dismissal').value,
+                    batPosition: document.getElementById('batPosition').value || '0',
+                    overs: document.getElementById('overs').value || '0',
+                    bRuns: document.getElementById('bRuns').value || '0',
+                    wickets: document.getElementById('wickets').value || '0',
+                    maidens: document.getElementById('maidens').value || '0',
+                    wides: document.getElementById('wides').value || '0',
+                    noballs: document.getElementById('noballs').value || '0',
+                    catches: document.getElementById('catches').value || '0',
+                    runouts: document.getElementById('runouts').value || '0',
+                    stumpings: document.getElementById('stumpings').value || '0',
+                    motm: document.getElementById('motm').checked,
+                    savedAt: new Date().toISOString(),
+                };
+
+                if (!match.matchType) { showToast('Please select a match type', 'error'); return; }
+
+                saveMatch(match);
+                showToast('Match saved successfully! 🏸');
+                setTimeout(() => window.location.href = 'dashboard.html', 800);
+            }
+
+            function handleLogout() {
+                clearCurrentPlayer();
+                window.location.href = 'index.html';
+            }
+        } // end initPage
     </script>
 </body>
 

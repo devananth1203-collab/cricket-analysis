@@ -134,7 +134,14 @@
                         <div class="glass-card">
                             <div class="card-header">
                                 <h2>👥 Manage Players</h2>
-                                <span style="font-size:0.8rem;color:var(--text-muted)" id="admin-player-count"></span>
+                                <div style="display:flex;align-items:center;gap:10px;margin-left:auto">
+                                    <span id="refresh-stamp" style="font-size:0.72rem;color:var(--accent-green)"></span>
+                                    <span style="font-size:0.8rem;color:var(--text-muted)"
+                                        id="admin-player-count"></span>
+                                    <button onclick="adminRefreshNow()"
+                                        style="background:none;border:1px solid var(--glass-border);border-radius:8px;padding:4px 12px;color:var(--accent-gold);cursor:pointer;font-size:0.82rem">🔄
+                                        Refresh</button>
+                                </div>
                             </div>
                             <div class="card-body" style="padding:0">
                                 <div class="table-container">
@@ -328,11 +335,42 @@
     </nav>
 
     <div id="toast-container" class="toast-container"></div>
+
+    <!-- DB Loading Overlay -->
+    <div id="db-loading"
+        style="display:none;position:fixed;inset:0;background:rgba(10,15,30,0.92);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+        <div style="font-size:2rem;animation:spin 1s linear infinite">⏳</div>
+        <div style="color:#a55eea;font-weight:700;font-size:1rem">Connecting to Admin Database…</div>
+    </div>
+    <style>
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+    </style>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="app.js"></script>
     <script>
         let adminLoggedIn = false;
+        let dbReady = false;
+
+        // Pre-load DB so admin panel has data immediately after login
+        document.getElementById('db-loading').style.display = 'flex';
+        initDB().then(() => {
+            dbReady = true;
+            document.getElementById('db-loading').style.display = 'none';
+        }).catch(() => {
+            dbReady = true;
+            document.getElementById('db-loading').style.display = 'none';
+        });
 
         function doAdminLogin() {
+            if (!dbReady) { showToast('Database loading...', 'info'); return; }
             const pw = document.getElementById('admin-pw-input').value;
             if (checkAdmin(pw)) {
                 adminLoggedIn = true;
@@ -340,6 +378,19 @@
                 document.getElementById('admin-panel').style.display = 'block';
                 document.getElementById('admin-bottom-nav').style.display = '';
                 showSection('players');
+                // Subscribe to real-time updates while admin panel is open
+                fbListen('players', (data) => {
+                    _playersCache = data ? Object.values(data) : [];
+                    if (document.getElementById('section-players').style.display !== 'none') {
+                        loadAdminPlayers();
+                        updateAdminStamp();
+                    }
+                });
+                fbListen('matches', (data) => {
+                    _matchesCache = data ? Object.values(data) : [];
+                });
+                // 10-second polling — any internet, any network
+                setInterval(adminRefreshNow, 10000);
             } else {
                 showToast('Wrong password!', 'error');
             }
@@ -348,6 +399,19 @@
         document.getElementById('admin-pw-input').addEventListener('keypress', e => { if (e.key === 'Enter') doAdminLogin(); });
 
         function adminLogout() { window.location.href = 'index.html'; }
+
+        function adminRefreshNow() {
+            if (!adminLoggedIn) return;
+            Promise.all([loadPlayersFromDB(), loadMatchesFromDB()]).then(() => {
+                loadAdminPlayers();
+                updateAdminStamp();
+            }).catch(() => loadAdminPlayers());
+        }
+
+        function updateAdminStamp() {
+            const el = document.getElementById('refresh-stamp');
+            if (el) el.textContent = '🔄 Updated ' + new Date().toLocaleTimeString('en-IN');
+        }
 
         function showSection(s) {
             ['players', 'matches', 'settings'].forEach(sec => {
@@ -509,16 +573,32 @@
             const cp = document.getElementById('confirm-pw').value.trim();
             if (!np) { showToast('Enter a new password', 'error'); return; }
             if (np !== cp) { showToast('Passwords do not match', 'error'); return; }
-            localStorage.setItem('crick_admin_pw', np);
-            document.getElementById('new-pw').value = '';
-            document.getElementById('confirm-pw').value = '';
-            showToast('Password updated!');
+            saveAdminPwToDB(np).then ? saveAdminPwToDB(np).then(() => {
+                _adminPwCache = np;
+                document.getElementById('new-pw').value = '';
+                document.getElementById('confirm-pw').value = '';
+                showToast('Password updated!');
+            }) : (() => {
+                localStorage.setItem('crick_admin_pw', np);
+                _adminPwCache = np;
+                document.getElementById('new-pw').value = '';
+                document.getElementById('confirm-pw').value = '';
+                showToast('Password updated!');
+            })();
         }
 
         function confirmClearAll() {
             if (confirm('⚠️ This will delete ALL players and matches. Are you absolutely sure?')) {
-                localStorage.removeItem('crick_players');
-                localStorage.removeItem('crick_matches');
+                // Clear Firebase
+                if (firebaseEnabled && db) {
+                    db.ref('players').remove();
+                    db.ref('matches').remove();
+                } else {
+                    localStorage.removeItem('crick_players');
+                    localStorage.removeItem('crick_matches');
+                }
+                _playersCache = [];
+                _matchesCache = [];
                 showToast('All data cleared');
                 loadAdminPlayers();
             }
