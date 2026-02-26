@@ -134,6 +134,7 @@
                         <div class="glass-card">
                             <div class="card-header">
                                 <h2>👥 Manage Players</h2>
+                                <span style="font-size:0.8rem;color:var(--text-muted)" id="admin-player-count"></span>
                             </div>
                             <div class="card-body" style="padding:0">
                                 <div class="table-container">
@@ -145,6 +146,12 @@
                                                 <th>Role</th>
                                                 <th>Type</th>
                                                 <th>Matches</th>
+                                                <th>Runs</th>
+                                                <th>Avg</th>
+                                                <th>SR</th>
+                                                <th>Wickets</th>
+                                                <th>Eco</th>
+                                                <th>MOTM</th>
                                                 <th>Registered</th>
                                                 <th>Actions</th>
                                             </tr>
@@ -311,6 +318,15 @@
         </div>
     </div>
 
+    <!-- Mobile Bottom Nav (only visible when admin panel is shown) -->
+    <nav class="mobile-bottom-nav" id="admin-bottom-nav" style="display:none">
+        <a href="#" onclick="showSection('players')"><span class="mbn-icon">👥</span>Players</a>
+        <a href="#" onclick="showSection('matches')"><span class="mbn-icon">📋</span>Matches</a>
+        <a href="#" onclick="showSection('settings')"><span class="mbn-icon">⚙️</span>Settings</a>
+        <a href="dashboard.html"><span class="mbn-icon">🏠</span>Dashboard</a>
+        <a href="#" onclick="adminLogout()"><span class="mbn-icon">🚪</span>Logout</a>
+    </nav>
+
     <div id="toast-container" class="toast-container"></div>
     <script src="app.js"></script>
     <script>
@@ -322,6 +338,7 @@
                 adminLoggedIn = true;
                 document.getElementById('admin-login-wrap').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
+                document.getElementById('admin-bottom-nav').style.display = '';
                 showSection('players');
             } else {
                 showToast('Wrong password!', 'error');
@@ -343,18 +360,29 @@
         function loadAdminPlayers() {
             const players = getPlayers();
             const tbody = document.getElementById('admin-players-tbody');
+            const countEl = document.getElementById('admin-player-count');
+            if (countEl) countEl.textContent = `${players.length} player${players.length !== 1 ? 's' : ''} registered`;
             tbody.innerHTML = players.map(p => {
                 const s = calcStats(p.mobile);
                 const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN') : '-';
+                const motmBadge = s.bat.motm > 0
+                    ? `<span class="badge badge-gold">🏆 ${s.bat.motm}</span>`
+                    : '<span style="color:var(--text-muted)">-</span>';
                 return `<tr>
       <td><div style="display:flex;align-items:center;gap:10px">
-        <div class="player-mini-avatar" style="width:32px;height:32px;font-size:0.85rem">${initials(p.name)}</div>
+        <div class="player-mini-avatar" style="width:34px;height:34px;font-size:0.85rem">${initials(p.name)}</div>
         <span class="highlight">${p.name}</span>
       </div></td>
       <td class="text-muted">${p.mobile}</td>
       <td><span class="badge badge-green">${p.role}</span></td>
       <td><span class="badge badge-blue">${p.matchType}</span></td>
-      <td>${s.bat.total}</td>
+      <td style="font-weight:700">${s.bat.total}</td>
+      <td class="gold" style="font-weight:700">${s.bat.runs}</td>
+      <td>${s.avg}</td>
+      <td>${s.sr}</td>
+      <td class="green" style="font-weight:700">${s.bowl.wickets}</td>
+      <td>${s.eco}</td>
+      <td>${motmBadge}</td>
       <td class="text-muted" style="font-size:0.8rem">${date}</td>
       <td>
         <div style="display:flex;gap:6px">
@@ -363,7 +391,7 @@
         </div>
       </td>
     </tr>`;
-            }).join('') || '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">No players registered</td></tr>';
+            }).join('') || '<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--text-muted)">No players registered</td></tr>';
         }
 
         function openEditPlayer(mobile) {
