@@ -79,6 +79,8 @@
                                     <tr>
                                         <th>Rank</th>
                                         <th>Player</th>
+                                        <th>📱 Mobile No.</th>
+                                        <th>Type</th>
                                         <th>Role</th>
                                         <th>Matches</th>
                                         <th>Runs</th>
@@ -224,11 +226,12 @@
         <div style="display:flex;align-items:center;gap:10px">
           <div class="player-mini-avatar" style="width:34px;height:34px;font-size:0.9rem">${initials(p.name)}</div>
           <div>
-            <div class="highlight">${p.name}${isCurrent ? ' <span style="color:var(--accent-gold);font-size:0.7rem">◀ You</span>' : ''}</div>
-            <div style="font-size:0.72rem;color:var(--text-muted)">${p.mobile}</div>
+            <div class="highlight">${p.name}${isCurrent ? ' <span style="color:var(--accent-gold);font-size:0.7rem">◄ You</span>' : ''}</div>
           </div>
         </div>
       </td>
+      <td><span style="font-family:monospace;font-size:0.82rem;color:var(--accent-gold);background:rgba(245,166,35,0.1);padding:3px 8px;border-radius:6px;border:1px solid rgba(245,166,35,0.25)">📱 ${p.mobile}</span></td>
+      <td><span class="badge badge-blue">${p.matchType || '-'}</span></td>
       <td><span class="badge badge-green">${p.role}</span></td>
       <td>${s.bat.total}</td>
       <td class="gold">${s.bat.runs}</td>

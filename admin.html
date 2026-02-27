@@ -149,7 +149,7 @@
                                         <thead>
                                             <tr>
                                                 <th>Player</th>
-                                                <th>Mobile</th>
+                                                <th>📱 Registration No.</th>
                                                 <th>Role</th>
                                                 <th>Type</th>
                                                 <th>Matches</th>
@@ -159,7 +159,6 @@
                                                 <th>Wickets</th>
                                                 <th>Eco</th>
                                                 <th>MOTM</th>
-                                                <th>Registered</th>
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
@@ -435,27 +434,31 @@
                 return `<tr>
       <td><div style="display:flex;align-items:center;gap:10px">
         <div class="player-mini-avatar" style="width:34px;height:34px;font-size:0.85rem">${initials(p.name)}</div>
-        <span class="highlight">${p.name}</span>
+        <div>
+          <div class="highlight" style="font-weight:700">${p.name}</div>
+          <div style="font-size:0.7rem;color:var(--text-muted)">${date !== '-' ? '📅 Joined ' + date : ''}</div>
+        </div>
       </div></td>
-      <td class="text-muted">${p.mobile}</td>
+      <td>
+        <span style="font-family:monospace;font-weight:700;font-size:0.85rem;color:var(--accent-gold);background:rgba(245,166,35,0.12);padding:4px 10px;border-radius:8px;border:1px solid rgba(245,166,35,0.3);letter-spacing:0.5px">📱 ${p.mobile}</span>
+      </td>
       <td><span class="badge badge-green">${p.role}</span></td>
       <td><span class="badge badge-blue">${p.matchType}</span></td>
-      <td style="font-weight:700">${s.bat.total}</td>
+      <td style="font-weight:700;text-align:center">${s.bat.total}</td>
       <td class="gold" style="font-weight:700">${s.bat.runs}</td>
       <td>${s.avg}</td>
       <td>${s.sr}</td>
       <td class="green" style="font-weight:700">${s.bowl.wickets}</td>
       <td>${s.eco}</td>
       <td>${motmBadge}</td>
-      <td class="text-muted" style="font-size:0.8rem">${date}</td>
       <td>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-ghost btn-sm" onclick="openEditPlayer('${p.mobile}')">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="openEditPlayer('${p.mobile}')">✏️ Edit</button>
           <button class="btn btn-red btn-sm" onclick="openDelPlayer('${p.mobile}')">🗑️</button>
         </div>
       </td>
     </tr>`;
-            }).join('') || '<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--text-muted)">No players registered</td></tr>';
+            }).join('') || '<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--text-muted)">No players registered yet</td></tr>';
         }
 
         function openEditPlayer(mobile) {

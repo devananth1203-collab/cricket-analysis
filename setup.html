@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Setup — CricAnalytics Pro</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .setup-card {
+            background: rgba(15, 22, 40, 0.98);
+            border: 1px solid rgba(165, 94, 234, 0.35);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 560px;
+        }
+
+        .setup-card h1 {
+            font-size: 1.5rem;
+            margin-bottom: 6px;
+        }
+
+        .steps-progress {
+            display: flex;
+            gap: 0;
+            margin: 28px 0 32px;
+            position: relative;
+        }
+
+        .steps-progress::before {
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--glass-border);
+            z-index: 0;
+        }
+
+        .step-dot {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-dot .dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 2px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            transition: all 0.3s;
+        }
+
+        .step-dot.active .dot {
+            background: var(--gradient-purple);
+            border-color: var(--accent-purple);
+            color: #fff;
+        }
+
+        .step-dot.done .dot {
+            background: var(--gradient-green, linear-gradient(135deg, #1a9b75, #0d6e54));
+            border-color: #1a9b75;
+            color: #fff;
+        }
+
+        .step-dot .lbl {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .step-dot.active .lbl {
+            color: var(--accent-purple);
+        }
+
+        .step-dot.done .lbl {
+            color: #1a9b75;
+        }
+
+        .step-pane {
+            display: none;
+        }
+
+        .step-pane.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .instruction-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .instruction-box ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .instruction-box li {
+            margin-bottom: 10px;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .instruction-box li strong {
+            color: var(--text-primary);
+        }
+
+        .open-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(165, 94, 234, 0.15);
+            border: 1px solid rgba(165, 94, 234, 0.4);
+            color: var(--accent-purple);
+            padding: 10px 18px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.88rem;
+            margin: 4px 0 16px;
+            transition: all 0.2s;
+        }
+
+        .open-link:hover {
+            background: rgba(165, 94, 234, 0.28);
+        }
+
+        .config-form label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .config-form .form-control {
+            font-family: monospace;
+            font-size: 0.82rem;
+            margin-bottom: 10px;
+        }
+
+        .paste-area {
+            width: 100%;
+            font-family: monospace;
+            font-size: 0.78rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 14px;
+            color: var(--text-primary);
+            resize: vertical;
+            min-height: 160px;
+            outline: none;
+        }
+
+        .paste-area:focus {
+            border-color: rgba(165, 94, 234, 0.5);
+        }
+
+        .parse-btn {
+            width: 100%;
+            margin-top: 10px;
+            background: rgba(165, 94, 234, 0.15);
+            border: 1px solid rgba(165, 94, 234, 0.4);
+            color: var(--accent-purple);
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.88rem;
+            transition: all 0.2s;
+        }
+
+        .parse-btn:hover {
+            background: rgba(165, 94, 234, 0.28);
+        }
+
+        .config-preview {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 14px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--accent-green, #1a9b75);
+            display: none;
+            margin-top: 12px;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .success-icon {
+            text-align: center;
+            font-size: 4rem;
+            margin: 20px 0 10px;
+        }
+
+        .success-msg {
+            text-align: center;
+        }
+
+        .success-msg h2 {
+            color: var(--accent-gold);
+            margin-bottom: 8px;
+        }
+
+        .success-msg p {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            margin-bottom: 20px;
+        }
+
+        .test-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+        }
+
+        .test-status.testing {
+            background: rgba(245, 166, 35, 0.1);
+            border: 1px solid rgba(245, 166, 35, 0.3);
+            color: var(--accent-gold);
+        }
+
+        .test-status.ok {
+            background: rgba(26, 155, 117, 0.1);
+            border: 1px solid rgba(26, 155, 117, 0.3);
+            color: #1a9b75;
+        }
+
+        .test-status.fail {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #dc3545;
+        }
+
+        @media(max-width:480px) {
+            .setup-card {
+                padding: 24px 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="setup-card">
+        <div style="text-align:center;margin-bottom:8px">
+            <span style="font-size:2.5rem">🔥</span>
+        </div>
+        <h1 style="text-align:center">Firebase Setup</h1>
+        <p style="text-align:center;font-size:0.85rem;color:var(--text-muted);margin-bottom:0">Connect your app to an
+            online database so all devices share the same player data</p>
+
+        <!-- STEPS PROGRESS -->
+        <div class="steps-progress">
+            <div class="step-dot active" id="sdot-1">
+                <div class="dot">1</div>
+                <div class="lbl">Create Project</div>
+            </div>
+            <div class="step-dot" id="sdot-2">
+                <div class="dot">2</div>
+                <div class="lbl">Paste Config</div>
+            </div>
+            <div class="step-dot" id="sdot-3">
+                <div class="dot">3</div>
+                <div class="lbl">Done!</div>
+            </div>
+        </div>
+
+        <!-- STEP 1 -->
+        <div class="step-pane active" id="pane-1">
+            <h3 style="margin-bottom:12px">Step 1: Create Free Firebase Project</h3>
+            <a class="open-link" href="https://console.firebase.google.com/" target="_blank">
+                🔥 Open Firebase Console (free, no credit card)
+            </a>
+            <div class="instruction-box">
+                <ol>
+                    <li>Click <strong>"Add project"</strong> → Enter name <strong>CricAnalytics</strong> → Disable
+                        Analytics → <strong>Create project</strong> → wait → Continue</li>
+                    <li>In the left sidebar click <strong>Build → Realtime Database</strong></li>
+                    <li>Click <strong>"Create Database"</strong> → choose any location → <strong>"Start in test
+                            mode"</strong> → Enable</li>
+                    <li>Click the ⚙️ gear icon → <strong>Project settings</strong> → scroll to <em>"Your apps"</em> →
+                        click <strong>&lt;/&gt;</strong></li>
+                    <li>Enter any app nickname → <strong>Register app</strong> → you'll see a
+                        <code>firebaseConfig</code> block</li>
+                </ol>
+            </div>
+            <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="goStep(2)">
+                ✅ I completed these steps → Next
+            </button>
+        </div>
+
+        <!-- STEP 2 -->
+        <div class="step-pane" id="pane-2">
+            <h3 style="margin-bottom:6px">Step 2: Paste Your Firebase Config</h3>
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">Copy the entire
+                <code>const firebaseConfig = { ... };</code> block and paste it below:</p>
+
+            <div class="config-form">
+                <label>Paste firebaseConfig here:</label>
+                <textarea class="paste-area" id="config-paste" placeholder='const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "your-project.firebaseapp.com",
+  databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+  projectId: "your-project",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456:web:abc123"
+};'></textarea>
+                <button class="parse-btn" onclick="parseConfig()">🔍 Parse & Preview Config</button>
+                <pre class="config-preview" id="config-preview"></pre>
+            </div>
+
+            <div id="test-result" style="margin-top:12px"></div>
+
+            <div style="display:flex;gap:10px;margin-top:16px">
+                <button class="btn btn-outline" style="flex:1;justify-content:center" onclick="goStep(1)">←
+                    Back</button>
+                <button class="btn btn-gold" id="save-btn" style="flex:2;justify-content:center;display:none"
+                    onclick="saveConfig()">
+                    💾 Save & Test Connection
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 3 -->
+        <div class="step-pane" id="pane-3">
+            <div class="success-icon">🎉</div>
+            <div class="success-msg">
+                <h2>Setup Complete!</h2>
+                <p>Your app is now connected to Firebase. Players from <strong>any device, any network</strong> will
+                    appear in the shared player list and admin panel — updated every 10 seconds.</p>
+            </div>
+            <div id="connection-status" class="test-status testing">
+                <span>⏳</span> Testing database connection…
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+                <a href="index.html" class="btn btn-gold" style="text-align:center;justify-content:center">🏏 Open App —
+                    Register Players</a>
+                <a href="players.html" class="btn btn-outline" style="text-align:center;justify-content:center">👥 View
+                    All Players</a>
+                <a href="admin.html" class="btn btn-ghost" style="text-align:center;justify-content:center">🔒 Admin
+                    Panel</a>
+            </div>
+            <p style="font-size:0.75rem;color:var(--text-muted);text-align:center;margin-top:20px">Admin password:
+                <strong>admin@cricket123</strong><br>Change it anytime in Admin → Settings</p>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Firebase SDK (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <script>
+        let parsedConfig = null;
+
+        function goStep(n) {
+            [1, 2, 3].forEach(i => {
+                document.getElementById(`pane-${i}`).classList.toggle('active', i === n);
+                const dot = document.getElementById(`sdot-${i}`);
+                dot.classList.toggle('active', i === n);
+                dot.classList.toggle('done', i < n);
+            });
+        }
+
+        function parseConfig() {
+            const raw = document.getElementById('config-paste').value.trim();
+            if (!raw) { showToast('Please paste your Firebase config first', 'error'); return; }
+
+            // Extract values from the pasted block
+            const get = (key) => {
+                const m = raw.match(new RegExp(`${key}\\s*:\\s*["'\`]([^"'\`]+)["'\`]`));
+                return m ? m[1] : '';
+            };
+
+            const cfg = {
+                apiKey: get('apiKey'),
+                authDomain: get('authDomain'),
+                databaseURL: get('databaseURL'),
+                projectId: get('projectId'),
+                storageBucket: get('storageBucket'),
+                messagingSenderId: get('messagingSenderId'),
+                appId: get('appId'),
+            };
+
+            const missing = Object.entries(cfg).filter(([k, v]) => !v);
+            if (missing.length > 0) {
+                showToast(`Missing fields: ${missing.map(([k]) => k).join(', ')}`, 'error');
+                return;
+            }
+            if (!cfg.databaseURL.includes('firebaseio.com')) {
+                showToast('databaseURL looks wrong — make sure Realtime Database is created', 'error');
+                return;
+            }
+
+            parsedConfig = cfg;
+            const preview = `const firebaseConfig = {\n  apiKey: "${cfg.apiKey}",\n  authDomain: "${cfg.authDomain}",\n  databaseURL: "${cfg.databaseURL}",\n  projectId: "${cfg.projectId}",\n  storageBucket: "${cfg.storageBucket}",\n  messagingSenderId: "${cfg.messagingSenderId}",\n  appId: "${cfg.appId}"\n};`;
+            document.getElementById('config-preview').style.display = 'block';
+            document.getElementById('config-preview').textContent = preview;
+            document.getElementById('save-btn').style.display = 'flex';
+            showToast('Config parsed successfully! ✅');
+        }
+
+        async function saveConfig() {
+            if (!parsedConfig) { showToast('Parse the config first', 'error'); return; }
+
+            const btn = document.getElementById('save-btn');
+            btn.textContent = '⏳ Saving & Testing…';
+            btn.disabled = true;
+
+            // Test the connection first
+            try {
+                if (firebase.apps.length) firebase.app().delete();
+                firebase.initializeApp(parsedConfig);
+                const db = firebase.database();
+                // Write a test value
+                await db.ref('_test').set({ ts: Date.now() });
+                // Clean up test
+                await db.ref('_test').remove();
+                // Initialize admin password if needed
+                const snap = await db.ref('adminPw').once('value');
+                if (!snap.val()) {
+                    await db.ref('adminPw').set('admin@cricket123');
+                }
+            } catch (e) {
+                btn.textContent = '💾 Save & Test Connection';
+                btn.disabled = false;
+                showToast('Connection failed: ' + e.message, 'error');
+                return;
+            }
+
+            // Build the new firebase-config.js content
+            const fileContent = buildFirebaseConfigFile(parsedConfig);
+
+            // Try to save via service worker / blob download for the user
+            const blob = new Blob([fileContent], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'firebase-config.js';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Also save to localStorage so the app can use it immediately
+            localStorage.setItem('_firebase_config_override', JSON.stringify(parsedConfig));
+
+            btn.textContent = '✅ Saved!';
+            goStep(3);
+
+            // Test connection status on step 3
+            setTimeout(async () => {
+                const status = document.getElementById('connection-status');
+                try {
+                    const db = firebase.database();
+                    await db.ref('adminPw').once('value');
+                    status.className = 'test-status ok';
+                    status.innerHTML = '<span>✅</span> Database connected! All devices can now share player data.';
+                } catch (e) {
+                    status.className = 'test-status fail';
+                    status.innerHTML = '<span>❌</span> Connection issue: ' + e.message;
+                }
+            }, 500);
+        }
+
+        function buildFirebaseConfigFile(cfg) {
+            return `// ===== FIREBASE CONFIG FOR CRICANALYTICS PRO =====
+// Auto-configured on ${new Date().toLocaleDateString('en-IN')}
+
+const firebaseConfig = {
+  apiKey: "${cfg.apiKey}",
+  authDomain: "${cfg.authDomain}",
+  databaseURL: "${cfg.databaseURL}",
+  projectId: "${cfg.projectId}",
+  storageBucket: "${cfg.storageBucket}",
+  messagingSenderId: "${cfg.messagingSenderId}",
+  appId: "${cfg.appId}"
+};
+
+// ===== FIREBASE INITIALIZATION =====
+let db = null;
+let firebaseEnabled = false;
+
+let _playersCache = null;
+let _matchesCache = null;
+let _adminPwCache = null;
+
+const isFirebaseConfigured = () =>
+  firebaseConfig.databaseURL && firebaseConfig.databaseURL.includes('firebaseio.com');
+
+function initFirebase() {
+  if (!isFirebaseConfigured()) {
+    console.warn('[CricDB] Firebase not configured — using localStorage fallback.');
+    return false;
+  }
+  try {
+    if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    db = firebase.database();
+    firebaseEnabled = true;
+    console.log('[CricDB] Firebase connected ✅');
+    return true;
+  } catch (e) {
+    console.warn('[CricDB] Firebase init failed, using localStorage:', e.message);
+    return false;
+  }
+}
+
+function fbRead(path) { return db.ref(path).once('value').then(snap => snap.val()); }
+function fbWrite(path, data) { return db.ref(path).set(data); }
+function fbListen(path, callback) {
+  if (!firebaseEnabled) return;
+  db.ref(path).on('value', snap => callback(snap.val()));
+}
+
+async function loadPlayersFromDB() {
+  if (!firebaseEnabled) { _playersCache = JSON.parse(localStorage.getItem('crick_players') || '[]'); return _playersCache; }
+  const data = await fbRead('players');
+  _playersCache = data ? Object.values(data) : [];
+  return _playersCache;
+}
+async function savePlayerToDB(player) {
+  if (!_playersCache) _playersCache = [];
+  const idx = _playersCache.findIndex(p => p.mobile === player.mobile);
+  if (idx >= 0) _playersCache[idx] = player; else _playersCache.push(player);
+  if (!firebaseEnabled) { localStorage.setItem('crick_players', JSON.stringify(_playersCache)); return; }
+  const key = player.mobile.replace(/[.#$[\\]]/g, '_');
+  await fbWrite(\`players/\${key}\`, player);
+}
+async function deletePlayerFromDB(mobile) {
+  if (!_playersCache) _playersCache = [];
+  _playersCache = _playersCache.filter(p => p.mobile !== mobile);
+  if (!firebaseEnabled) { localStorage.setItem('crick_players', JSON.stringify(_playersCache)); await deletePlayerMatchesFromDB(mobile); return; }
+  const key = mobile.replace(/[.#$[\\]]/g, '_');
+  await db.ref(\`players/\${key}\`).remove();
+  await deletePlayerMatchesFromDB(mobile);
+}
+async function loadMatchesFromDB() {
+  if (!firebaseEnabled) { _matchesCache = JSON.parse(localStorage.getItem('crick_matches') || '[]'); return _matchesCache; }
+  const data = await fbRead('matches');
+  _matchesCache = data ? Object.values(data) : [];
+  return _matchesCache;
+}
+async function saveMatchToDB(match) {
+  if (!_matchesCache) _matchesCache = [];
+  const idx = _matchesCache.findIndex(m => m.id === match.id);
+  if (idx >= 0) _matchesCache[idx] = match; else _matchesCache.push(match);
+  if (!firebaseEnabled) { localStorage.setItem('crick_matches', JSON.stringify(_matchesCache)); return; }
+  await fbWrite(\`matches/\${match.id}\`, match);
+}
+async function saveMatchesToDB(matches) {
+  _matchesCache = matches;
+  if (!firebaseEnabled) { localStorage.setItem('crick_matches', JSON.stringify(matches)); return; }
+  const obj = {};
+  matches.forEach(m => { obj[m.id] = m; });
+  await fbWrite('matches', Object.keys(obj).length ? obj : null);
+}
+async function deleteMatchFromDB(id) {
+  if (!_matchesCache) _matchesCache = [];
+  _matchesCache = _matchesCache.filter(m => m.id !== id);
+  if (!firebaseEnabled) { localStorage.setItem('crick_matches', JSON.stringify(_matchesCache)); return; }
+  await db.ref(\`matches/\${id}\`).remove();
+}
+async function deletePlayerMatchesFromDB(mobile) {
+  if (!_matchesCache) await loadMatchesFromDB();
+  const remaining = (_matchesCache || []).filter(m => m.playerMobile !== mobile);
+  await saveMatchesToDB(remaining);
+}
+async function loadAdminPwFromDB() {
+  if (!firebaseEnabled) { _adminPwCache = localStorage.getItem('crick_admin_pw') || 'admin@cricket123'; return _adminPwCache; }
+  const pw = await fbRead('adminPw');
+  _adminPwCache = pw || 'admin@cricket123';
+  return _adminPwCache;
+}
+async function saveAdminPwToDB(pw) {
+  _adminPwCache = pw;
+  if (!firebaseEnabled) { localStorage.setItem('crick_admin_pw', pw); return; }
+  await fbWrite('adminPw', pw);
+}
+
+initFirebase();
+`;
+        }
+
+        function showToast(msg, type = 'success') {
+            let c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${msg}</span>`;
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 3100);
+        }
+
+        // Check if already configured
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('_firebase_config_override');
+            if (saved) {
+                try {
+                    const cfg = JSON.parse(saved);
+                    document.getElementById('config-paste').value = `const firebaseConfig = {\n  apiKey: "${cfg.apiKey}",\n  authDomain: "${cfg.authDomain}",\n  databaseURL: "${cfg.databaseURL}",\n  projectId: "${cfg.projectId}",\n  storageBucket: "${cfg.storageBucket}",\n  messagingSenderId: "${cfg.messagingSenderId}",\n  appId: "${cfg.appId}"\n};`;
+                } catch (e) { }
+            }
+        });
+    </script>
+</body>
+
+</html>
